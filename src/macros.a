@@ -1,0 +1,16 @@
+;; 65816 memory size macros
+;; suggested that you not use immediate addressing mode
+!macro short {
+	SEP #$30
+}
+
+!macro long {
+	REP #$30
+}
+
+!macro incr .it {
+	INC .it
+	BCC +
+	INC .it+1
++
+}

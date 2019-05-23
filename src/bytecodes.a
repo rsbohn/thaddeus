@@ -1,0 +1,89 @@
+;; Little Smalltalk bytecodes
+;; from Budd 1983
+	!cpu 65816
+	* = $F800
+BCTAB:
+	!word BC_EXTD
+	!word BC_IVAR
+	!word BC_ARG
+	!word BC_LIT
+	!word BC_CLASS
+	!word BCIVAR_
+	!word BCTEMP_
+	!word BC_MSG
+	!word BC_SUPER
+	!word BC09
+	!word BC0A
+	!word BC0B
+	!word BC0C
+	!word BC0D
+	!word BC0E
+	!word BC_SPECIAL
+
+;; current instruction is in RW $14
+BCMASK:
+	!word %0000000011110000
+BVMASK:
+	!word %0000000000001111
+RAMASK: !word $00FF
+
+BCDO:			;; take next bytecode
+			;; (bytecode nextbyte -- codeptr value)
+	+long
+	LDA (RW)
+	AND BCMASK
+	BNE +		;; is it EXTD?
+	LDA (RW)	;; bytecode is AL value is B
+	XBA
+	AND RAMASK
+	PHA		;; push 8 bit 'value'
+	LDA (RW)
+	+incr RW	;; skip value byte
+	AND BVMASK
+	ASL		;; *2 produces the table offset
+	BRA .EXTD
+
++	LDA (RW)	;; bytecode is AH value is AL
+	AND BVMASK
+	PHA		;; push 4 bit 'value'
+
+	LDA (RW)
+	AND BCMASK	;; select bytecode
+	LSR		;; // 8 produces the table offset
+	LSR
+	LSR
+
+.EXTD	TAX		;; code offset in A
+	LDA BCTAB,X
+	PHA		;; push codeptr
+	+incr RW	;; advance instruction pointer
+
+BCJUMP:
+	PLA
+	STA RA
+	PLA
+	JMP (RA)
+
+BC_EXTD:
+	BRA BC_EXTD
+
+BC_IVAR:
+	BRA BC_IVAR
+
+BC_ARG:
+BC_LIT:
+BC_CLASS:
+BCIVAR_:
+BCTEMP_:
+BC_MSG:
+BC_SUPER:
+BC09:
+BC0A:
+BC0B:
+BC0C:
+BC0D:
+BC0E:
+BC_SPECIAL:
+
+BCFAIL:
+	BRA BCFAIL
