@@ -128,7 +128,7 @@ BC_LSPEC:
 	BCC +
 	JMP BCFAIL	;; we don't handle >= $10 (yet)
 	;; map A to BCTAB
-+	+cell
++	+cells
 	CLC
 	ADC BC5TABP
 	STA RA
@@ -138,16 +138,16 @@ BC_LSPEC:
 	
 BCIVAR_:
 	;; pop, store in instance variable
-	+cell
+	+cells
 	TAY
 	+ipop
 	STA [RD], Y
 	JMP BCNEXT
 
 BCTEMP_:
-	+cell
+	+cells
 	TAY
-	+IPOP
+	+ipop
 	STA [RC], Y
 	JMP BCNEXT
 
