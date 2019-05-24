@@ -2,6 +2,13 @@
 ;; from Budd 1983
 	!cpu 65816
 	* = $F800
+
+	;; RA scratch $00
+	;; RB -> code literals $04
+	;; RC -> method args, temps $08
+	;; RD -> instance vars $0C
+	;; RS -> interpreter stack pointer $10
+	;; RW -> current bytecode $14
 BCTAB:
 	!word BC_EXTD
 	!word BC_IVAR
@@ -121,7 +128,8 @@ BC_LSPEC:
 	BCC +
 	JMP BCFAIL	;; we don't handle >= $10 (yet)
 	;; map A to BCTAB
-+	CLC
++	+cell
+	CLC
 	ADC BC5TABP
 	STA RA
 	LDA (RA)
@@ -130,12 +138,19 @@ BC_LSPEC:
 	
 BCIVAR_:
 	;; pop, store in instance variable
+	+cell
 	TAY
 	+ipop
 	STA [RD], Y
 	JMP BCNEXT
 
 BCTEMP_:
+	+cell
+	TAY
+	+IPOP
+	STA [RC], Y
+	JMP BCNEXT
+
 BC_MSG:
 BC_SUPER:
 BC0A:
