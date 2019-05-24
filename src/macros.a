@@ -33,10 +33,7 @@
 }
 
 !macro ipop {
-	LDA CH+2
-	AND RAMASK
-	SEC
-	SBC RS
-	STA RS
+	DEC RS
+	DEC RS
 	LDA (RS)
 }
