@@ -14,3 +14,29 @@
 	INC .it+1
 +
 }
+
+;; convert ordinal offset to a cell offset
+!macro cells {
+	ASL
+}
+
+;; push A to the interpreter stack (RS)
+;; this is a word stack
+;; stack grows upward
+!macro ipush {
+	STA (RS)
+	LDA CH+2
+	AND RAMASK
+	CLC
+	ADC RS
+	STA RS
+}
+
+!macro ipop {
+	LDA CH+2
+	AND RAMASK
+	SEC
+	SBC RS
+	STA RS
+	LDA (RS)
+}

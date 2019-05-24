@@ -8,11 +8,11 @@ BCTAB:
 	!word BC_ARG
 	!word BC_LIT
 	!word BC_CLASS
+	!word BC_LSPEC
 	!word BCIVAR_
 	!word BCTEMP_
 	!word BC_MSG
 	!word BC_SUPER
-	!word BC09
 	!word BC0A
 	!word BC0B
 	!word BC0C
@@ -64,20 +64,80 @@ BCJUMP:
 	PLA
 	JMP (RA)
 
+BCNEXT:	BRA BCDO
+
 BC_EXTD:
+	;; can't happen
+	;; this is handled above
 	BRA BC_EXTD
 
 BC_IVAR:
-	BRA BC_IVAR
+	;; push instance variable
+	+cells
+	TAY
+	LDA [RD],Y
+	+ipush
+	JMP BCNEXT
 
 BC_ARG:
+	;; push context value -- argument or temp variable
+	;; parser makes this work by putting temp after args
+	+cells
+	TAY
+	LDA [RC],Y
+	+ipush
+	JMP BCNEXT
+
 BC_LIT:
+	;; push literal from 'interpreter'
+	;; literals from source code are kept apart from bytecode
+	+cells
+	TAY
+	LDA [RB], Y
+	+ipush
+	JMP BCNEXT
+
 BC_CLASS:
+	;; given a class SYMBOL 
+	;; resolve the class, then push to the istack
+	BRA BC_CLASS
+
+;;;;;;;;;;;;;;;;;;;;
+BC5TAB:
+	!word $0000, $0001, $0002, $0003
+	!word $0004, $0005, $0006, $0007
+	;; 8 9 -1 o_true
+	!word $0008, $0009, $FFFF, $00F2
+	;; o_false o_nil o_smalltalk o_thisproc
+	!word $00F0, $00F4, $00F6, $00F8
+BC5MAX:
+	!word $0010
+BC5TABP:
+	!word BC5TAB
+;;;;;;;;;;;;;;;;;;;;
+
+BC_LSPEC:
+	CMP BC5MAX
+	BCC +
+	JMP BCFAIL	;; we don't handle >= $10 (yet)
+	;; map A to BCTAB
++	CLC
+	ADC BC5TABP
+	STA RA
+	LDA (RA)
+	+ipush
+	JMP BCNEXT
+	
 BCIVAR_:
+	;; pop, store in instance variable
+	TAY
+	+ipop
+	STA [RD], Y
+	JMP BCNEXT
+
 BCTEMP_:
 BC_MSG:
 BC_SUPER:
-BC09:
 BC0A:
 BC0B:
 BC0C:
