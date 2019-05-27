@@ -12,6 +12,7 @@
 	KCHAN = $18
 	SPLIT = $1A
 
+	VIDEO	= $0840
 	TIB	= $6F00
 	STACK	= $7FFF
 	NVECT	= $FFE8
@@ -31,7 +32,9 @@ COLD:
 
 	JSR ICONSOLE
 	JSR TIBCLEAR
-	JMP MAIN
+	JSR VSTART
+
+	JMP BCDO
 
 MTIB:	!word TIB
 MSTACK: !word STACK
@@ -153,7 +156,27 @@ CRLF:
 	RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+VSTART:
+	+short
+	LDX #$00
+-	STX VIDEO
+	LDA VIDEOP,X
+	STA VIDEO+1
+	INX
+	CPX #$10
+	BNE -
+	RTS
+
+VIDEOP:
+	!raw $7F, $50, $60, $08
+	!raw $21, $06, $18, $1C
+	!raw $00, $08, $20, $09
+	!raw $00, $00, $00, $00
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	!source "src/bytecodes.a"
+	!source "src/primitive.a"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	* = $FFC0

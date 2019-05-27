@@ -25,15 +25,20 @@
 ;; stack grows upward
 !macro ipush {
 	STA (RS)
-	LDA CH+2
-	AND RAMASK
-	CLC
-	ADC RS
-	STA RS
+	INC RS
+	INC RS
 }
 
 !macro ipop {
 	DEC RS
 	DEC RS
 	LDA (RS)
+}
+
+!macro ipeek {
+	LDA RS
+	STA RA
+	DEC RA
+	DEC RA
+	LDA (RA)
 }

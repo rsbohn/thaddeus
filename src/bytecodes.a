@@ -1,7 +1,6 @@
 ;; Little Smalltalk bytecodes
 ;; from Budd 1983
 	!cpu 65816
-	* = $F800
 
 	;; RA scratch $00
 	;; RB -> code literals $04
@@ -23,7 +22,7 @@ BCTAB:
 	!word BC0A
 	!word BC0B
 	!word BC0C
-	!word BC0D
+	!word BC_PRIM
 	!word BC0E
 	!word BC_SPECIAL
 
@@ -34,6 +33,7 @@ BVMASK:
 	!word %0000000000001111
 RAMASK: !word $00FF
 
+	* = $F800
 BCDO:			;; take next bytecode
 			;; (bytecode nextbyte -- codeptr value)
 	+long
@@ -110,13 +110,18 @@ BC_CLASS:
 	BRA BC_CLASS
 
 ;;;;;;;;;;;;;;;;;;;;
+	O_TRUE	= $00F2
+	O_FALSE	= $00F0
+	O_NIL	= $00F4
+	O_SMALLTALK = $00F6
+	O_THISPROC = $00F8
 BC5TAB:
 	!word $0000, $0001, $0002, $0003
 	!word $0004, $0005, $0006, $0007
 	;; 8 9 -1 o_true
-	!word $0008, $0009, $FFFF, $00F2
+	!word $0008, $0009, $FFFF, O_TRUE
 	;; o_false o_nil o_smalltalk o_thisproc
-	!word $00F0, $00F4, $00F6, $00F8
+	!word O_FALSE, O_NIL, O_SMALLTALK, O_THISPROC
 BC5MAX:
 	!word $0010
 BC5TABP:
@@ -156,9 +161,96 @@ BC_SUPER:
 BC0A:
 BC0B:
 BC0C:
-BC0D:
+	JMP BCFAIL
+BC_PRIM:
+	JSR PRIMDO
+	JMP BCNEXT
 BC0E:
+	JMP BCFAIL
+
 BC_SPECIAL:
+	;; action is based on value (A register)
+	STZ RA
+	INC RA	;; Special $01 SelfReturn
+	CMP RA
+	BNE +
+	;; self return
+	LDA [RD]
+	PHA
+	JMP .RETURN
++	INC RA	;; Special $02 StackReturn
+	CMP RA
+	BNE +
+	;; stack return
+	+ipop
+	PHA
+	JMP .RETURN
++	INC RA ;; Special $03 BlockReturn
+	CMP RA
+	BNE +
+	;; block return
+	+ipop
+	PHA
+	;;;; return to creatingContext -> previousContext
+	JMP .RETURN
++	INC RA ;; Special $04 Duplicate
+	CMP RA
+	BNE +
+	;; duplicate
+	+ipeek
+	+ipush
+	JMP BCNEXT
++	INC RA ;; Special $05 PopTop
+	CMP RA
+	BNE +
+	;; PopTop aka drop
+	DEC RS
+	DEC RS
+	JMP BCNEXT
++	INC RA ;; Special $06 Branch
+	CMP RA
+	BNE +
+	;; branch (absolute)
+	LDA (RW)
+	STA RW
+	JMP BCNEXT
++	INC RA	;; Special $07 BranchIfTrue
+	CMP RA
+	BNE +
+	;; branch if true
+	+ipop
+	CMP O_TRUE
+	BNE .SKIP
+	LDA (RW)
+	STA RW
+	JMP BCNEXT
++	INC RA	;; Special $08 BranchIfFalse
+	CMP RA
+	BNE +
+	;; branch if false
+	+ipop
+	CMP O_FALSE
+	BNE .SKIP
+	LDA (RW)
+	STA RW
+	JMP BCNEXT
+.SKIP:
+	;; do not branch -- skip the failed branch address
+	INC RW
+	INC RW
+	JMP BCNEXT
+
++	INC RA	;; Special $09 SendToSuper
+	INC RA	;; Special $0A Breakpoint
+	INC RA	;; OOPS
+	BRK 
+	BRK
+	BRA BCFAIL
+	
+
+.RETURN:
+	PLA
+-	BRA -
 
 BCFAIL:
 	BRA BCFAIL

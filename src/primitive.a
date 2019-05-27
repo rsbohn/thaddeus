@@ -1,0 +1,100 @@
+;; Little Smalltalk primatives
+;; from Budd 1983
+	!cpu 65816
+
+	;; arg count in register A
+	;; next in bytecode is primitive number
+	ARGC = $20
+	CONTEXT = $1C
+	;; Primitive dictionary:
+	;; NEXT: pointer to next entry
+	;; ID: kk
+	;; then code
+
+PRIMDO:
+	STA ARGC
+	LDA CONTEXT
+	PHA
+
+PFIND:
+	LDA PRIMAX
+	STA RA
+	LDY .ID
+-	LDA (RW)
+	AND RAMASK
+	CMP (RA),Y
+	BEQ .FOUND
+	LDA (RA)	;; go to next entry
+	BEQ .FOUND	;; final entry TRAP
+	STA RA
+	BRA -
+.FOUND	
+	INC RW		;; skip the primitive number
+	LDA .CODE
+	CLC
+	ADC RA
+	STA RA
+	JMP (RA)
+
+PRIMDONE:
+	PLA
+	STA CONTEXT
+	RTS
+
+	.TRUE = $F2
+	.FALSE = $F0
+	.NIL = $F4
+
+.ID:	!word $0002
+.CODE:	!word $0004
+
+!macro next .addr {
+	!word .addr
+}
+!macro primitive .id {
+	!word .id
+}
+P_TRAP:
+	+next $0000
+	+primitive $0013 ;; error trap or primitive not found
+.TRAP
+	BRA .TRAP
+
+P_IDENT:
+	+next P_TRAP
+	+primitive $0001 ;; identity
+	+ipop
+	STA RA
+	+ipop
+	CMP RA
+	BNE +
+	LDA .TRUE
+	+ipush
+	JMP PRIMDONE
++	LDA .FALSE
+	+ipush
+	JMP PRIMDONE
+
+P_OCLASS:
+	+next P_IDENT
+	+primitive $0002 ;; object class
+	STZ RA
+	+ipop
+	LDA RA
+	+ipush
+	JMP PRIMDONE
+
+P_PUTCH:
+	+next P_OCLASS
+	+primitive $0003 ;; print a single character
+	+ipop
+	JSR CHOUT
+	+long
+	JMP PRIMDONE
+
+PRIMAX:
+P_OSIZE:
+	+next P_PUTCH
+	+primitive $0004 ;; object size
+
+
