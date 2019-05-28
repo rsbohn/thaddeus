@@ -5,7 +5,7 @@
 	;; arg count in register A
 	;; next in bytecode is primitive number
 	ARGC = $20
-	CONTEXT = $1C
+	CONTEXT = $22
 	;; Primitive dictionary:
 	;; NEXT: pointer to next entry
 	;; ID: 
@@ -88,13 +88,7 @@ P_PUTCH:
 	+next P_OCLASS
 	+primitive $0003 ;; print a single character
 	+ipop
-	+short
-	PHB
-	PEA $0000
-	PLB
-	PLB
 	JSR CHOUT
-	PLB
 	+long
 	LDA .NIL	;; return nil
 	+ipush

@@ -8,6 +8,11 @@
 	;; RD -> instance vars $0C
 	;; RS -> interpreter stack pointer $10
 	;; RW -> current bytecode $14
+	RIV = $10
+	RCA = $12
+	RCT = $14
+	RBC = $16
+	RCC = $18
 BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
@@ -82,7 +87,7 @@ BC_IVAR:
 	;; 1X push instance variable
 	+cells
 	TAY
-	LDA [RD],Y
+	LDA (RIV),Y
 	+ipush
 	JMP BCNEXT
 
@@ -90,14 +95,14 @@ BC_ARG:
 	;; 2X push argument from context
 	+cells
 	TAY
-	LDA [RC],Y
+	LDA (RCA),Y
 	+ipush
 	JMP BCNEXT
 BC_TVAR:
 	;; 3X push temp variable from context
 	+cells
 	TAY
-	LDA [RC]
+	LDA (RCT)
 	+ipush
 	STA RA
 
@@ -106,7 +111,7 @@ BC_LITERAL:
 	;; literals from source code are kept apart from bytecode
 	+cells
 	TAY
-	LDA [RB], Y
+	LDA (RCC), Y
 	+ipush
 	JMP BCNEXT
 
@@ -150,14 +155,14 @@ BCIVAR_:
 	+cells
 	TAY
 	+ipop
-	STA [RD], Y
+	STA (RIV), Y
 	JMP BCNEXT
 
 BCTVAR_:
 	+cells
 	TAY
 	+ipop
-	STA [RC], Y
+	STA (RCT), Y
 	JMP BCNEXT
 
 BC_MARK:
@@ -180,7 +185,7 @@ BC_SPECIAL:
 	CMP RA
 	BNE +
 	;; self return
-	LDA [RD]
+	LDA (RIV)
 	PHA
 	JMP .RETURN
 +	INC RA	;; Special $02 StackReturn
@@ -264,8 +269,7 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	+long
 	LDA BOOTSECTOR
 	STA RW
-	STZ RD
-	STZ RD+2
+	STZ RIV
 	JMP BCDO
 
 BOOTSECTOR:

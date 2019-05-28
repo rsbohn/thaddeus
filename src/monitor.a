@@ -3,14 +3,10 @@
 	!cpu 65816
 
 	RA = $00
-	RB = $04
-	RC = $08
-	RD = $0C
-	RS = $10
-	RW = $14
+	RW = $04
+	RS = $08
 
-	KCHAN = $18
-	SPLIT = $1A
+	KCHAN = $1E
 
 	VIDEO	= $0840
 	TIB	= $6F00
@@ -31,70 +27,13 @@ COLD:
 	TCS
 
 	JSR ICONSOLE
-	JSR TIBCLEAR
 	JSR VSTART
 
 	JMP BCDO
 
-MTIB:	!word TIB
-MSTACK: !word STACK
-
-
-MAIN:
-	+short
-	JSR PROMPT
-	LDA MSPACE
--	JSR CHOUT
-	JSR CHIN
-	PHA
-	CMP NEWLINE
-	BEQ +
-	PLA
-	STA (RD)
-	INC RD
-	BNE -
-	;; TIB overflow
-
-+	PLA
-	JSR GOTLINE
-	BRA MAIN
-
-TIBCLEAR:
-	+long
-	LDA MTIB
-	STA RD
-	+short
-	LDA CH+0
-	TAY
-	DEY
--	STA (RD),Y
-	DEY
-	BNE -
-	STA (RD)
-	RTS
-
-PROMPT:
-	JSR CRLF
-	LDA MPROMPT
-	JSR CHOUT
-	RTS
-
-GOTLINE:
-	JSR ECHOLINE
-	JSR TIBCLEAR
-	RTS
-
-ECHOLINE:
-	JSR CRLF
-	+short
-	STZ RD
--	LDA (RD)
-	BEQ +
-	JSR CHOUT
-	INC RD
-	BRA -
-+	RTS
 ;;;;;;;;;;;;;;;;;;;;
+MSTACK:
+	!word STACK
 
 FVOUT:
 	!byte $10
