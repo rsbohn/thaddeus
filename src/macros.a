@@ -9,6 +9,7 @@
 }
 
 !macro incr .it {
+	CLC
 	INC .it
 	BCC +
 	INC .it+1

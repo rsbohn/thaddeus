@@ -8,9 +8,10 @@
 
 	KCHAN = $1E
 
+	EV = $0000
 	VIDEO	= $0840
 	TIB	= $6F00
-	STACK	= $7FFF
+	STACK	= $8000
 	NVECT	= $FFE8
 	EVECT	= $FFFA
 
@@ -29,6 +30,7 @@ COLD:
 	JSR ICONSOLE
 	JSR VSTART
 
+	;; run the Smalltalk VM
 	JMP BCDO
 
 ;;;;;;;;;;;;;;;;;;;;

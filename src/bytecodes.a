@@ -41,6 +41,11 @@ RAMASK: !word $00FF
 	* = $F800
 BCDO:			;; take next bytecode
 			;; (bytecode nextbyte -- codeptr value)
+	+short
+	LDA #$01
+	BIT $0C
+	BNE BCNEXT
+
 	+long
 	LDA (RW)
 	AND BCMASK
@@ -72,11 +77,15 @@ BCDO:			;; take next bytecode
 
 BCJUMP:
 	PLA
-	STA RA
+	STA EV
 	PLA
-	JMP (RA)
+	JMP (EV)
 
-BCNEXT:	BRA BCDO
+BCNEXT:	
+	+long
+	LDA $0E
+	TCD
+	BRA BCDO
 
 BC_EXTD:
 	;; can't happen
