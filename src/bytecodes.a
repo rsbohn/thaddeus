@@ -1,5 +1,5 @@
 ;; Little Smalltalk bytecodes
-;; from Budd 1983
+;; from Budd 1983, Little Smalltak v4
 	!cpu 65816
 
 	;; RA scratch $00
@@ -9,20 +9,20 @@
 	;; RS -> interpreter stack pointer $10
 	;; RW -> current bytecode $14
 BCTAB:
-	!word BC_EXTD
+	!word BC_EXTD		;; 00
 	!word BC_IVAR
 	!word BC_ARG
-	!word BC_LIT
-	!word BC_CLASS
-	!word BC_LSPEC
+	!word BC_TVAR
+	!word BC_LITERAL	;; 04
+	!word BC_CONSTANT
 	!word BCIVAR_
-	!word BCTEMP_
-	!word BC_MSG
-	!word BC_SUPER
-	!word BC0A
-	!word BC0B
-	!word BC0C
-	!word BC_PRIM
+	!word BCTVAR_
+	!word BC_MARK		;; 08
+	!word BC_SEND
+	!word BC_SEND1
+	!word BC_SEND2
+	!word BC_PUSHBLOCK	;; 0C
+	!word BC_PRIMITIVE
 	!word BC0E
 	!word BC_SPECIAL
 
@@ -79,7 +79,7 @@ BC_EXTD:
 	BRA BC_EXTD
 
 BC_IVAR:
-	;; push instance variable
+	;; 1X push instance variable
 	+cells
 	TAY
 	LDA [RD],Y
@@ -87,27 +87,28 @@ BC_IVAR:
 	JMP BCNEXT
 
 BC_ARG:
-	;; push context value -- argument or temp variable
-	;; parser makes this work by putting temp after args
+	;; 2X push argument from context
 	+cells
 	TAY
 	LDA [RC],Y
 	+ipush
 	JMP BCNEXT
+BC_TVAR:
+	;; 3X push temp variable from context
+	+cells
+	TAY
+	LDA [RC]
+	+ipush
+	STA RA
 
-BC_LIT:
-	;; push literal from 'interpreter'
+BC_LITERAL:
+	;; 4X push literal from 'interpreter'
 	;; literals from source code are kept apart from bytecode
 	+cells
 	TAY
 	LDA [RB], Y
 	+ipush
 	JMP BCNEXT
-
-BC_CLASS:
-	;; given a class SYMBOL 
-	;; resolve the class, then push to the istack
-	BRA BC_CLASS
 
 ;;;;;;;;;;;;;;;;;;;;
 	O_TRUE	= $00F2
@@ -128,7 +129,7 @@ BC5TABP:
 	!word BC5TAB
 ;;;;;;;;;;;;;;;;;;;;
 
-BC_LSPEC:
+BC_CONSTANT:
 	CMP BC5MAX
 	BCC +
 	JMP BCFAIL	;; we don't handle >= $10 (yet)
@@ -141,6 +142,9 @@ BC_LSPEC:
 	+ipush
 	JMP BCNEXT
 	
+BC_PUSHBLOCK:
+	BRA BC_PUSHBLOCK
+
 BCIVAR_:
 	;; pop, store in instance variable
 	+cells
@@ -149,20 +153,21 @@ BCIVAR_:
 	STA [RD], Y
 	JMP BCNEXT
 
-BCTEMP_:
+BCTVAR_:
 	+cells
 	TAY
 	+ipop
 	STA [RC], Y
 	JMP BCNEXT
 
-BC_MSG:
-BC_SUPER:
-BC0A:
-BC0B:
-BC0C:
+BC_MARK:
+	BRA BC_MARK
+BC_SEND:
+BC_SEND1:
+BC_SEND2:
 	JMP BCFAIL
-BC_PRIM:
+
+BC_PRIMITIVE:
 	JSR PRIMDO
 	JMP BCNEXT
 BC0E:
@@ -254,3 +259,15 @@ BC_SPECIAL:
 
 BCFAIL:
 	BRA BCFAIL
+
+BCBOOT:	;; set up the VM, run BOOTSECTOR
+	+long
+	LDA BOOTSECTOR
+	STA RW
+	STZ RD
+	STZ RD+2
+	JMP BCDO
+
+BOOTSECTOR:
+	!word *+2
+	!raw $4

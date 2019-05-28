@@ -8,7 +8,7 @@
 	CONTEXT = $1C
 	;; Primitive dictionary:
 	;; NEXT: pointer to next entry
-	;; ID: kk
+	;; ID: 
 	;; then code
 
 PRIMDO:
@@ -88,8 +88,16 @@ P_PUTCH:
 	+next P_OCLASS
 	+primitive $0003 ;; print a single character
 	+ipop
+	+short
+	PHB
+	PEA $0000
+	PLB
+	PLB
 	JSR CHOUT
+	PLB
 	+long
+	LDA .NIL	;; return nil
+	+ipush
 	JMP PRIMDONE
 
 PRIMAX:
