@@ -102,7 +102,7 @@ P_NEWOBJ:
 	+next P_OSIZE
 	+primitive $0007 ;; new object allocation
 	;; i(size class --)
-	JSR GCIALLOC
+	JSR GCALLOC
 	JSR SETCLASS
 	JMP PRIMDONE
 	
