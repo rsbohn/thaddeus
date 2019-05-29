@@ -1,0 +1,54 @@
+;; Little Smalltalk memory management
+;; from Budd 1983, Little Smalltalk v4
+	!cpu 65816
+
+	;;;; Memory Map: Pluton/Zero
+	;; memory region 0a: $00:0000 to $00:07FF
+	;; -- process and context
+	;; each process has a private direct page
+	;; context is loaded into the process as needed
+	;; memory region 0b: $00:0800 to $00:09FF
+	;; -- IO Space
+	;; memory region 0c $00:1000 to $00:6FFF
+	;; -- 24K ?? Could be for static allocation
+	;; memory region 0d: $00:7000 to $00:7FFF
+	;; -- 4K stack (wow that's big)
+	;; memory region 1a: $00:8000 to $00:EFFF
+	;; -- 28K object store
+	;; memory region 1b: $00:F000 to $00:FFFF
+	;; -- 4K ROM monitor and Smalltalk VM/bytecode interpreter
+
+	FREE = $8000	;; pointer to available memory
+FBIN:	!word $8000	;; marks memory object as binArray
+MTOP:	!word $EFFF	;; highest addr in object store
+
+GCALLOC:	;; i(size -- ptr) size is WORDS
+	LDA FREE
+	STA RA
+	+ipop
+	STA (RA)	;; set the size
+	ASL		;; *2 to allocate words
+	CLC
+	ADC FREE
+	INC
+	INC
+	STA FREE
+	LDA RA
+	+ipush
+	RTS
+
+GCIALLOC:	;; i(size -- ptr) size is BYTES
+	LDA FREE
+	STA RA
+	+ipop
+	EOR FBIN
+	STA (RA)
+	EOR FBIN
+	CLC
+	ADC FREE
+	INC
+	INC
+	STA FREE
+	LDA RA
+	+ipush
+	RTS

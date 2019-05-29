@@ -11,7 +11,7 @@
 	EV = $0000
 	VIDEO	= $0840
 	TIB	= $6F00
-	STACK	= $8000
+	STACK	= $7FFF
 	NVECT	= $FFE8
 	EVECT	= $FFFA
 
@@ -118,6 +118,7 @@ VIDEOP:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	!source "src/bytecodes.a"
 	!source "src/primitive.a"
+	!source "src/memory.a"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	* = $FFC0

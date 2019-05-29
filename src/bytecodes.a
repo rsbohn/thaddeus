@@ -44,7 +44,7 @@ BCDO:			;; take next bytecode
 	+short
 	LDA #$01
 	BIT $0C
-	BNE BCNEXT
+	BEQ BCNEXT
 
 	+long
 	LDA (RW)
