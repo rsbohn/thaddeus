@@ -30,6 +30,7 @@ COLD:
 	JSR ICONSOLE
 	JSR VSTART
 
+	JSR MSTART
 	;; run the Smalltalk VM
 	JMP BCDO
 
