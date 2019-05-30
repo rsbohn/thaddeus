@@ -78,9 +78,11 @@ P_IDENT:
 P_OCLASS:
 	+next P_IDENT
 	+primitive $0002 ;; object class
-	STZ RA
 	+ipop
-	LDA RA
+	STA RA
+	+const $0002	;; object is [size] [class] [stuff...]
+	TAY
+	LDA (RA),Y
 	+ipush
 	JMP PRIMDONE
 
@@ -97,6 +99,11 @@ P_PUTCH:
 P_OSIZE:
 	+next P_PUTCH
 	+primitive $0004 ;; object size
+	+ipop
+	STA RA
+	LDA (RA)
+	+ipush
+	JMP PRIMDONE
 
 P_NEWOBJ:
 	+next P_OSIZE
