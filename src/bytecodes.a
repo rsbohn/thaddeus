@@ -288,4 +288,5 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 
 BOOTSECTOR:
 	!word *+2
-	!raw $4
+	!byte $F6 
+	!word BOOTSECTOR+2

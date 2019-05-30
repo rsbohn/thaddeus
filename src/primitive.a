@@ -123,13 +123,43 @@ P_GETCH:
 	+ipush
 	JMP PRIMDONE
 
-PRIMAX:
 P_BYTESALLOT:
 	+next P_GETCH
-	+primitive $0020 ;; byteArray alloc
-	;; (size class --)
+	+primitive $0014 ;; byteArray alloc
+	;; (size class -- addr)
 	JSR GCIALLOC
 	JSR SETCLASS
+	JMP PRIMDONE
+
+P_STRAT:
+	+next P_BYTESALLOT
+	+primitive $0015 ;; string at:
+	;; (point addr -- value)
+	+ipop
+	DEC ;because yeah arrays start a 1
+	TAY
+	+ipop
+	STA RA
+	LDA (RA),Y	;; uh, this doesn't skip the 4 byte object header
+			;; hope that's ok
+	AND RAMASK
+	+ipush
+	JMP PRIMDONE
+
+PRIMAX:
+P_STRATPUT:
+	+next P_STRAT
+	+primitive $0016 ;; string at:put:
+	;; (point addr value -- addr)
+	+ipop
+	DEC ; see previous
+	TAY
+	+ipop
+	STA RA
+	+ipop
+	STA (RA),Y
+	LDA RA
+	+ipush
 	JMP PRIMDONE
 
 SETCLASS:
