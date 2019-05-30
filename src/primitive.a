@@ -146,7 +146,6 @@ P_STRAT:
 	+ipush
 	JMP PRIMDONE
 
-PRIMAX:
 P_STRATPUT:
 	+next P_STRAT
 	+primitive $0016 ;; string at:put:
@@ -157,10 +156,52 @@ P_STRATPUT:
 	+ipop
 	STA RA
 	+ipop
+	+short
 	STA (RA),Y
+	+long
 	LDA RA
 	+ipush
 	JMP PRIMDONE
+
+P_STRCLONE:
+	+next P_STRATPUT
+	+primitive $0017 ;; string clone 10r23
+	;; (class string -- clone)
+	+ipop
+	PHA	;; save the class
+	+ipop
+	PHA	;; save the original
+	;; now we have r(string class)
+	STA RA
+	LDA (RA)
+	TAY
+	;; alloc the new string
+	+ipush
+	JSR GCIALLOC
+	;; now we have i(clone) RA = string r(string class)
+	LDA RW
+	PHA	;; r(ipc string class)
+	+ipop
+	STA RW
+	;; RA = string, RW = clone, i(--) r(ipc string class)
+-	LDA (RA),Y
+	STA (RW),Y
+	DEY
+	BNE -
+	LDA (RA)
+	STA (RW)
+	;; now undo
+	PLA ;; ipc
+	STA RW
+	PLA ;; string -- drop it
+	PLA ;; class
+	+ipush
+	LDA RA ;; clone
+	+ipush
+	JSR SETCLASS
+	JMP PRIMDONE
+
+PRIMAX:	+next P_STRCLONE
 
 SETCLASS:
 	;; i(object class -- object)
