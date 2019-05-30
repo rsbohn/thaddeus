@@ -9,9 +9,8 @@
 	;; RS -> interpreter stack pointer $10
 	;; RW -> current bytecode $14
 	RIV = $10
-	RCA = $12
-	RCT = $14
-	RBC = $16
+	RCA = $14
+	RCT = $16
 	RCC = $18
 BCTAB:
 	!word BC_EXTD		;; 00
@@ -96,7 +95,7 @@ BC_IVAR:
 	;; 1X push instance variable
 	+cells
 	TAY
-	LDA (RIV),Y
+	LDA [RIV],Y
 	+ipush
 	JMP BCNEXT
 
@@ -164,7 +163,7 @@ BCIVAR_:
 	+cells
 	TAY
 	+ipop
-	STA (RIV), Y
+	STA [RIV], Y
 	JMP BCNEXT
 
 BCTVAR_:
@@ -194,7 +193,7 @@ BC_SPECIAL:
 	CMP RA
 	BNE +
 	;; self return
-	LDA (RIV)
+	LDA [RIV]
 	PHA
 	JMP .RETURN
 +	INC RA	;; Special $02 StackReturn
@@ -279,6 +278,12 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	LDA BOOTSECTOR
 	STA RW
 	STZ RIV
+	STZ RIV+2
+	;; set O_TRUE and O_FALSE
+	+const $1038
+	STA O_FALSE
+	+const $104a
+	STA O_TRUE
 	JMP BCDO
 
 BOOTSECTOR:

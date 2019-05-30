@@ -8,6 +8,19 @@
 	REP #$30
 }
 
+!macro const .n {
+	LDA+2 .n
+}
+;; or perhaps 
+;; !byte $A9, <.n, >.n
+;; or even
+;; php
+;; !short
+;; lda >.n
+;; exb
+;; lda <.n
+;; plp
+
 !macro incr .it {
 	CLC
 	INC .it

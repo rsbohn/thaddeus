@@ -32,7 +32,7 @@ COLD:
 
 	JSR MSTART
 	;; run the Smalltalk VM
-	JMP BCDO
+	JMP BCBOOT
 
 ;;;;;;;;;;;;;;;;;;;;
 MSTACK:
