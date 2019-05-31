@@ -24,11 +24,12 @@ MZERO:	!word $8010	;; where the actual store starts
 MTOP:	!word $EFFF	;; highest addr in object store
 
 MSTART:
+	+long
 	LDA MZERO
 	STA FREE
 	RTS
 
-GCALLOC:	;; i(size -- ptr) size is WORDS
+GCALLOC:	;; i(size -- addr) size is WORDS
 	LDA FREE
 	STA RA
 	+ipop
@@ -43,7 +44,7 @@ GCALLOC:	;; i(size -- ptr) size is WORDS
 	+ipush
 	RTS
 
-GCIALLOC:	;; i(size -- ptr) size is BYTES
+GCIALLOC:	;; i(size -- addr) size is BYTES
 	LDA FREE
 	STA RA
 	+ipop

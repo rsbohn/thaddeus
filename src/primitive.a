@@ -174,26 +174,26 @@ P_STRCLONE:
 	;; now we have r(string class)
 	STA RA
 	LDA (RA)
+	+ipush
 	TAY
 	;; alloc the new string
-	+ipush
-	JSR GCIALLOC
-	;; now we have i(clone) RA = string r(string class)
-	LDA RW
-	PHA	;; r(ipc string class)
+	JSR GCIALLOC ;; i(size -- addr)
+		;; i(clone) RA = clone RW = ipc r(string class)
 	+ipop
-	STA RW
-	;; RA = string, RW = clone, i(--) r(ipc string class)
--	LDA (RA),Y
-	STA (RW),Y
+	STA RA	;; i(--) RA = clone RW = ipc r(string class)
+	LDA RW
+	+ipush	
+	PLA
+	STA RW	;; i(ipc) RA = clone RW = string  r(class)
+-	LDA (RW),Y
+	STA (RA),Y
 	DEY
 	BNE -
-	LDA (RA)
-	STA (RW)
+	LDA (RW)	;; copy final word
+	STA (RA)
 	;; now undo
-	PLA ;; ipc
+	+ipop
 	STA RW
-	PLA ;; string -- drop it
 	PLA ;; class
 	+ipush
 	LDA RA ;; clone
