@@ -173,20 +173,51 @@ BCTVAR_:
 	STA (RCT), Y
 	JMP BCNEXT
 
-BC_MARK:
-	BRA BC_MARK
+BC_MARK:	;; bytecode $09 10r09 MarkArguments
+	;; collect arguments from stack into an array
+	;; maybe reload context
+	TAY	;; value (low)
+	;LDA CONTEXT
+	;+ipush
+	TYA
+	+ipush	;; i(size )
+	+ipush	;; i(size size )
+	JSR GCALLOC
+		;; i(args size )
+	INC
+	INC
+	STA RA
+	LDA ArrayClass
+	STA (RA)
+	;; pop arguments from stack
+	+ipop	;; args array
+	STA RA
+	+ipop	;; size in words
+	ASL	;; words to bytes
+	TAY
+-	+ipop
+	STA (RA),Y
+	DEY
+	DEY
+	BPL -
+	;; push arguments 
+	LDA RA
+	+ipop
+	JMP BCNEXT
+
+
 BC_SEND:
 BC_SEND1:
 BC_SEND2:
 	JMP BCFAIL
 
-BC_PRIMITIVE:
+BC_PRIMITIVE:	;; bytecode $0D 10r13 primitive
 	JSR PRIMDO
 	JMP BCNEXT
 BC0E:
 	JMP BCFAIL
 
-BC_SPECIAL:
+BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; action is based on value (A register)
 	STZ RA
 	INC RA	;; Special $01 SelfReturn

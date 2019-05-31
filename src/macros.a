@@ -9,7 +9,7 @@
 }
 
 !macro const .n {
-	LDA+2 .n
+	LDA+2 #.n
 }
 ;; or perhaps 
 ;; !byte $A9, <.n, >.n
