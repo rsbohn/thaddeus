@@ -12,6 +12,7 @@
 	RCA = $14
 	RCT = $16
 	RCC = $18
+	NEXTPROC = $0E
 BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
@@ -40,7 +41,7 @@ RAMASK: !word $00FF
 	* = $F800
 BCDO:			;; take next bytecode
 			;; (bytecode nextbyte -- codeptr value)
-	+short
+	+short		;; is this process runnable?
 	LDA #$01
 	BIT $0C
 	BEQ BCNEXT
@@ -187,7 +188,9 @@ BC_MARK:	;; bytecode $09 10r09 MarkArguments
 	INC
 	INC
 	STA RA
-	LDA ArrayClass
+	;;LDA ArrayClass
+	;;STA (RA)
+	EOR RA	;; zero for now
 	STA (RA)
 	;; pop arguments from stack
 	+ipop	;; args array

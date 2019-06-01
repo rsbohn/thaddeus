@@ -48,6 +48,10 @@
 	DEC RS
 	LDA (RS)
 }
+!macro idrop {
+	DEC RS
+	DEC RS
+}
 
 !macro ipeek {
 	LDA RS

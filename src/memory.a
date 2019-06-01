@@ -59,3 +59,38 @@ GCIALLOC:	;; i(size -- addr) size is BYTES
 	LDA RA
 	+ipush
 	RTS
+
+;; It's plot exposition. It has to go somewhere. --Lady Holiday
+MAKECONTEXT:	;; i(args temps -- context)
+	+const $0005
+	+ipush
+	JSR GCALLOC
+	;; i(context args temps)
+	;; [size] [class] [method] [args] [temps] [stack] [previous]
+	+ipop
+	STA RA
+	+const $0006
+	TAY
+	+ipop
+	STA (RA),Y
+	+ipop
+	INY
+	INY
+	STA (RA),Y
+	+const $0080
+	INY
+	INY
+	STA (RA),Y
+	LDA RA
+	+ipush
+	RTS
+
+SETMETHOD:	;; i(method context -- )
+	;; find the method
+	;; receiver = context->args[0]
+	;; methods = receiver->class
+	;; scan methods for my method
+	;; if found: context[0] = method
+	;; if not: scan superclass
+	;; if no superclass: fail NoSuchMethod
+	
