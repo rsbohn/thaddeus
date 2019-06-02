@@ -201,7 +201,39 @@ P_STRCLONE:
 	JSR SETCLASS
 	JMP PRIMDONE
 
-PRIMAX:	+next P_STRCLONE
+P_BLIT:
+	+next P_STRATPUT
+	+primitive $0030 ;; 10r48 blit $D5 $30 . . . . .
+	;; i(src sbank dest dbank count --)
+	+long
+	+ipop
+	STA RA
+	+ipop
+	STA RA+2
+	LDA RW
+	PHA
+	LDA RW+2
+	PHA
+	+ipop
+	STA RW
+	+ipop
+	STA RW+2
+	+ipop
+	TAY
+-	LDA [RA],Y
+	STA [RW],Y
+	DEY
+	BPL -
+
+	PLA
+	STA RW+2
+	PLA
+	STA RW
+	JMP PRIMDONE
+	
+
+
+PRIMAX:	+next P_BLIT
 
 SETCLASS:
 	;; i(object class -- object)
