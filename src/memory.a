@@ -18,48 +18,99 @@
 	;; memory region 1b: $00:F000 to $00:FFFF
 	;; -- 4K ROM monitor and Smalltalk VM/bytecode interpreter
 
-	FREE = $8000	;; pointer to available memory
+	PMEM = $EF00	;; pointer to available memory
+	PSYM = $6F00	;; pointer to available symbol
+MZERO:	!word $8000	;; where the actual store starts
+M_TOP:	!word PMEM-2
+SZERO:	!word $4000	;; where symbol table starts
+S_TOP:	!word PSYM-2
+
 FBIN:	!word $8000	;; marks memory object as binArray
-MZERO:	!word $8010	;; where the actual store starts
-MTOP:	!word $EFFF	;; highest addr in object store
+	
 
 MSTART:
 	+long
 	LDA MZERO
-	STA FREE
+	STA PMEM
+	LDA SZERO
+	STA PSYM
 	RTS
 
+MEM_EXHAUSTED:
+	JSR PRINTME
+	!raw "Out of memory.", $00
+-	BRA -
+
 GCALLOC:	;; i(size -- addr) size is WORDS
-	LDA FREE
+	LDA PMEM
 	STA RA
 	+ipop
 	STA (RA)	;; set the size
 	ASL		;; *2 to allocate words
 	CLC
-	ADC FREE
+	ADC PMEM
 	INC
 	INC
-	STA FREE
+	CMP M_TOP
+	BMI +
+	JMP MEM_EXHAUSTED
++	STA PMEM
 	LDA RA
 	+ipush
 	RTS
 
 GCIALLOC:	;; i(size -- addr) size is BYTES
-	LDA FREE
+	LDA PMEM
 	STA RA
 	+ipop
 	EOR FBIN
 	STA (RA)
 	EOR FBIN
 	CLC
-	ADC FREE
+	ADC PMEM
 	INC
 	INC
-	STA FREE
-	LDA RA
+	CMP M_TOP
+	BMI +
+	JMP MEM_EXHAUSTED
++	STA PMEM
+	+const $0001	;; word align
+	BIT PMEM
+	BEQ +
+	INC PMEM
++	LDA RA
 	+ipush
 	RTS
 
+INTERN:		;; i(string -- symbol)	add string to symbol table
+	+ipeek
+	JSR STR_HASH
+	PHA
+	LDA PSYM
+	STA RA
+	+ipop
+	STA (RA)
+	INC RA
+	INC RA
+	+ipop
+	STA RA
+	PLA
+	+ipush
+	RTS
+
+STR_HASH:	;; i(string -- hash)
+	+ipop
+	STA RA
+	+const $007F
+	AND (RA) ;; get size
+	TAY
+-	BEQ +
+	ADC (RA),Y
+	DEY
+	BNE -
++	+ipush
+	RTS
+	
 ;; It's plot exposition. It has to go somewhere. --Lady Holiday
 MAKECONTEXT:	;; i(args temps -- context)
 	+const $0005

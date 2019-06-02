@@ -318,9 +318,12 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	STA O_FALSE
 	+const $104a
 	STA O_TRUE
+	+const $0080
+	STA RS
 	JMP BCDO
 
 BOOTSECTOR:
 	!word *+2
-	!byte $F6 
+	!byte $51, $61
+	!byte $F6
 	!word BOOTSECTOR+2

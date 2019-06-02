@@ -28,6 +28,7 @@ COLD:
 	TCS
 
 	JSR ICONSOLE
+	JSR BOOTMSG
 	JSR VSTART
 
 	JSR MSTART
@@ -63,6 +64,28 @@ ICONSOLE:
 	+long
 	PLA
 	PLY
+	RTS
+
+BOOTMSG:
+	JSR PRINTME
+	!raw "Pluton/0 65816 Computer", $0A, $0D
+	!raw "Edition 2019.06", $0A, $0D, $0A, $00
+	RTS
+
+PRINTME:	;; print the embedded string
+	+long
+	PLA
+	INC
+	STA RA
+	+short
+-	LDA (RA)
+	BEQ +	;; done printing
+	JSR CHOUT
+	INC RA
+	BRA -
++	LDA RA
+	+long
+	PHA
 	RTS
 
 CHIN:
