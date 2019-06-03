@@ -83,9 +83,11 @@ BCJUMP:
 
 BCNEXT:	
 	+long
-	LDA $0E
+	LDA $0E		;; go to the next process
 	TCD
 	BRA BCDO
+BCNEXT2:		;; a more convenient breakpoint
+	BRA BCNEXT
 
 BC_EXTD:
 	;; can't happen
@@ -265,7 +267,7 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; branch (absolute)
 	LDA (RW)
 	STA RW
-	JMP BCNEXT
+	JMP BCNEXT2
 +	INC RA	;; Special $07 BranchIfTrue
 	CMP RA
 	BNE +

@@ -49,7 +49,7 @@ GCALLOC:	;; i(size -- addr) size is WORDS
 	ASL		;; *2 to allocate words
 	CLC
 	ADC PMEM
-	INC
+	INC		;; *class goes here
 	INC
 	CMP M_TOP
 	BMI +
@@ -68,7 +68,9 @@ GCIALLOC:	;; i(size -- addr) size is BYTES
 	EOR FBIN
 	CLC
 	ADC PMEM
+	INC		;; size
 	INC
+	INC		;; *class
 	INC
 	CMP M_TOP
 	BMI +

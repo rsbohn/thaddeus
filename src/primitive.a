@@ -1,4 +1,4 @@
-;; Little Smalltalk primatives
+;; Little Smalltalk primitives
 ;; from Budd 1983
 	!cpu 65816
 
@@ -137,11 +137,14 @@ P_STRAT:
 	;; (point addr -- value)
 	+ipop
 	DEC ;because yeah arrays start a 1
+	INC ; skip 4 byte header
+	INC
+	INC
+	INC
 	TAY
 	+ipop
 	STA RA
-	LDA (RA),Y	;; uh, this doesn't skip the 4 byte object header
-			;; hope that's ok
+	LDA (RA),Y
 	AND RAMASK
 	+ipush
 	JMP PRIMDONE
@@ -152,6 +155,10 @@ P_STRATPUT:
 	;; (point addr value -- addr)
 	+ipop
 	DEC ; see previous
+	INC ; skip 4 byte header
+	INC
+	INC
+	INC
 	TAY
 	+ipop
 	STA RA
