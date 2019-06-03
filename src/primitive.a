@@ -1,0 +1,256 @@
+;; Little Smalltalk primitives
+;; from Budd 1983
+	!cpu 65816
+
+	;; arg count in register A
+	;; next in bytecode is primitive number
+	ARGC = $20
+	CONTEXT = $22
+	;; Primitive dictionary:
+	;; NEXT: pointer to next entry
+	;; ID: 
+	;; then code
+
+PRIMDO:
+	STA ARGC
+	LDA CONTEXT
+	PHA
+
+PFIND:
+	LDA PRIMAX
+	STA RA
+	LDY .ID
+-	LDA (RW)
+	AND RAMASK
+	CMP (RA),Y
+	BEQ .FOUND
+	LDA (RA)	;; go to next entry
+	BEQ .FOUND	;; final entry TRAP
+	STA RA
+	BRA -
+.FOUND	
+	INC RW		;; skip the primitive number
+	LDA .CODE
+	CLC
+	ADC RA
+	STA EV
+	JMP (EV)
+
+PRIMDONE:
+	PLA
+	STA CONTEXT
+	RTS
+
+	.TRUE = $F2
+	.FALSE = $F0
+	.NIL = $F4
+
+.ID:	!word $0002
+.CODE:	!word $0004
+
+!macro next .addr {
+	!word .addr
+}
+!macro primitive .id {
+	!word .id
+}
+P_TRAP:
+	+next $0000
+	+primitive $0013 ;; error trap or primitive not found
+.TRAP
+	BRA .TRAP
+
+P_IDENT:
+	+next P_TRAP
+	+primitive $0001 ;; identity
+	+ipop
+	STA RA
+	+ipop
+	CMP RA
+	BNE +
+	LDA .TRUE
+	+ipush
+	JMP PRIMDONE
++	LDA .FALSE
+	+ipush
+	JMP PRIMDONE
+
+P_OCLASS:
+	+next P_IDENT
+	+primitive $0002 ;; object class
+	+ipop
+	STA RA
+	+const $0002	;; object is [size] [class] [stuff...]
+	TAY
+	LDA (RA),Y
+	+ipush
+	JMP PRIMDONE
+
+P_PUTCH:
+	+next P_OCLASS
+	+primitive $0003 ;; print a single character
+	+ipop
+	JSR CHOUT
+	+long
+	LDA .NIL	;; return nil
+	+ipush
+	JMP PRIMDONE
+
+P_OSIZE:
+	+next P_PUTCH
+	+primitive $0004 ;; object size
+	+ipop
+	STA RA
+	LDA (RA)
+	+ipush
+	JMP PRIMDONE
+
+P_NEWOBJ:
+	+next P_OSIZE
+	+primitive $0007 ;; new object allocation
+	;; i(size class --)
+	JSR GCALLOC
+	JSR SETCLASS
+	JMP PRIMDONE
+	
+
+P_GETCH:
+	+next P_NEWOBJ
+	+primitive $0009 ;; get a character
+	JSR CHIN
+	+long
+	AND RAMASK
+	+ipush
+	JMP PRIMDONE
+
+P_BYTESALLOT:
+	+next P_GETCH
+	+primitive $0014 ;; byteArray alloc
+	;; (size class -- addr)
+	JSR GCIALLOC
+	JSR SETCLASS
+	JMP PRIMDONE
+
+P_STRAT:
+	+next P_BYTESALLOT
+	+primitive $0015 ;; string at:
+	;; (point addr -- value)
+	+ipop
+	DEC ;because yeah arrays start a 1
+	INC ; skip 4 byte header
+	INC
+	INC
+	INC
+	TAY
+	+ipop
+	STA RA
+	LDA (RA),Y
+	AND RAMASK
+	+ipush
+	JMP PRIMDONE
+
+P_STRATPUT:
+	+next P_STRAT
+	+primitive $0016 ;; string at:put:
+	;; (point addr value -- addr)
+	+ipop
+	DEC ; see previous
+	INC ; skip 4 byte header
+	INC
+	INC
+	INC
+	TAY
+	+ipop
+	STA RA
+	+ipop
+	+short
+	STA (RA),Y
+	+long
+	LDA RA
+	+ipush
+	JMP PRIMDONE
+
+P_STRCLONE:
+	+next P_STRATPUT
+	+primitive $0017 ;; string clone 10r23
+	;; (class string -- clone)
+	+ipop
+	PHA	;; save the class
+	+ipop
+	PHA	;; save the original
+	;; now we have r(string class)
+	STA RA
+	LDA (RA)
+	+ipush
+	TAY
+	;; alloc the new string
+	JSR GCIALLOC ;; i(size -- addr)
+		;; i(clone) RA = clone RW = ipc r(string class)
+	+ipop
+	STA RA	;; i(--) RA = clone RW = ipc r(string class)
+	LDA RW
+	+ipush	
+	PLA
+	STA RW	;; i(ipc) RA = clone RW = string  r(class)
+-	LDA (RW),Y
+	STA (RA),Y
+	DEY
+	BNE -
+	LDA (RW)	;; copy final word
+	STA (RA)
+	;; now undo
+	+ipop
+	STA RW
+	PLA ;; class
+	+ipush
+	LDA RA ;; clone
+	+ipush
+	JSR SETCLASS
+	JMP PRIMDONE
+
+P_BLIT:
+	+next P_STRATPUT
+	+primitive $0030 ;; 10r48 blit $D5 $30 . . . . .
+	;; i(src sbank dest dbank count --)
+	+long
+	+ipop
+	STA RA
+	+ipop
+	STA RA+2
+	LDA RW
+	PHA
+	LDA RW+2
+	PHA
+	+ipop
+	STA RW
+	+ipop
+	STA RW+2
+	+ipop
+	TAY
+-	LDA [RA],Y
+	STA [RW],Y
+	DEY
+	BPL -
+
+	PLA
+	STA RW+2
+	PLA
+	STA RW
+	JMP PRIMDONE
+	
+
+
+PRIMAX:	+next P_BLIT
+
+SETCLASS:
+	;; i(object class -- object)
+	+ipop
+	PHA
+	INC
+	INC	;; now A has object->class addr
+	STA RA
+	+ipop
+	STA (RA)
+	PLA
+	+ipush
+	RTS
