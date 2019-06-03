@@ -4,11 +4,11 @@ This is a new implementation of Timothy Budd's Little Smalltalk. [http://web.eng
 
 ## Source files
 
-. src/monitor.a -- Cold boot, initialize video and serial ports, run 'bootsector'. Also basic IO routines.
-. src/bytecodes.a -- This is the bytecode interpreter. Also here you find 'bootsector'.
-. src/primitives.a -- The primitives.
-. src/memory.a -- Allocate memory in the object store $8000 to $EEFF etc.
-. src/macros.a -- macros
+* src/monitor.a -- Cold boot, initialize video and serial ports, run 'bootsector'. Also basic IO routines.
+* src/bytecodes.a -- This is the bytecode interpreter. Also here you find 'bootsector'.
+* src/primitives.a -- The primitives.
+* src/memory.a -- Allocate memory in the object store $8000 to $EEFF etc.
+* src/macros.a -- macros
 
 ## Memory, ByteArray and SmallInt
 
@@ -25,9 +25,9 @@ Objects other than SmallInt have a size and a pointer to their class, followed b
 
 One of the challenges is understanding the optimizations in LST4 and deciding what to keep.
 
-. ByteArray: LST4 shifts the size and adds two flags in bytes 1,0. Thaddeus puts the flags in bytes 15,14 instead. 
+* ByteArray: LST4 shifts the size and adds two flags in bytes 1,0. Thaddeus puts the flags in bytes 15,14 instead. 
 This allows using the negative bit as the 'This is a ByteArray' flag.
-. Maths: Pointers are 16 bits. SmallInt is (will be) 15 bits instead of 31 bits.
+* Maths: Pointers are 16 bits. SmallInt is (will be) 15 bits instead of 31 bits.
 
 ## Garbage Collection
 
