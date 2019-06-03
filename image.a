@@ -1,0 +1,152 @@
+;; Little Smalltalk base image
+;; rsbohn@gmail.com 2019-05-29
+;; from Budd lst4
+;; https://github.com/crcx/littlesmalltalk/blob/master/lst4/ImageBuilder/imageSource
+	!symbollist "image.list"
+
+!macro instance .cname {
+	!word $0000 ;; size
+	!word .cname
+}
+!macro of .cname {
+	!word .cname
+}
+!macro from .super {
+	!word .super
+}
+!macro parent .parent {
+	!word Class
+	!word .parent
+}
+!macro ivar .vname {
+	!word O_NIL
+}
+;; start with some 'constants'
+	* = $1000
+O_NIL:	+instance Undefined
+O_FALSE:
+	+instance False
+O_TRUE:	+instance True
+O_ST:	+instance List
+MetaMagnitude:
+	+instance Class
+	
+
+;; here is the class tree
+Object:
+	!word $0003
+	+of	Object
+	+from	MetaObject
+	+ivar _nil
+
+Class:
+	!word $0007		;; size
+	+of	 MetaClass	;; class
+	+from	 Object		;; superclass
+	+ivar _name
+	+ivar _parentClass
+	+ivar _methods
+	+ivar _size
+	+ivar _variables
+MetaObject:
+	!word $0002
+	+of	Class
+	+from	Class
+MetaClass:
+	!word $0002
+	+of	Class
+	+from	MetaObject
+
+;;;; with that done.
+Undefined:	
+	!word $0002
+	+parent Object
+Boolean:
+	!word $0002
+	+parent Object
+True:
+	!word $0002
+	+parent Boolean
+False:
+	!word $0002
+	+parent Boolean
+Process:
+	!word $0005
+	+parent Object
+	+ivar _context
+	+ivar _state
+	+ivar _result
+Context:
+	!word $0009
+	+parent Object
+	+ivar _method
+	+ivar _arguments
+	+ivar _temporaries
+	+ivar _stack
+	+ivar	_bytePointer
+	+ivar _stackTop
+	+ivar _previousContext
+Block:
+	!word $0005
+	+parent Context
+	+ivar _argumentLocation
+	+ivar _creatingContext
+	+ivar _oldBytePointer
+Method:
+	!word $0009
+	+parent Object
+	+ivar __name
+	+ivar _byteCodes
+	+ivar _literals
+	+ivar _stackSize
+	+ivar _temporarySize
+	+ivar _class
+	+ivar _text
+Magnitude:
+	!word $0002
+	+parent Object
+
+MetaSymbol:
+	!word $0003
+	+of	Class
+	+from	MetaMagnitude
+	+ivar _symbols
+Symbol:
+	!word $0002
+	+of	MetaSymbol
+	+from	Magnitude
+MetaChar:
+	!word $0003
+	+of	Class
+	+from	MetaMagnitude
+	+ivar _chars
+Char:
+	!word $0003
+	+of	MetaChar
+	+from	Magnitude
+	+ivar _value
+
+Collection:
+	!word $0002
+	+parent Magnitude
+List:
+	!word $0003
+	+parent Collection
+	+ivar _elements
+Dictionary:
+	!word $0004
+	+parent Collection
+	+ivar _keys
+	+ivar _values
+
+Array:
+	!word $0002
+	+parent Collection
+OrderedArray:
+	!word $0002
+	+parent Array
+ByteArray:
+	!word $0002
+	+parent Array
+
+	!source "methods.a"

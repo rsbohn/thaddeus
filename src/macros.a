@@ -1,0 +1,62 @@
+;; 65816 memory size macros
+;; suggested that you not use immediate addressing mode
+!macro short {
+	SEP #$30
+}
+
+!macro long {
+	REP #$30
+}
+
+!macro const .n {
+	LDA+2 #.n
+}
+;; or perhaps 
+;; !byte $A9, <.n, >.n
+;; or even
+;; php
+;; !short
+;; lda >.n
+;; exb
+;; lda <.n
+;; plp
+
+!macro incr .it {
+	CLC
+	INC .it
+	BCC +
+	INC .it+1
++
+}
+
+;; convert ordinal offset to a cell offset
+!macro cells {
+	ASL
+}
+
+;; push A to the interpreter stack (RS)
+;; this is a word stack
+;; stack grows upward
+!macro ipush {
+	STA (RS)
+	INC RS
+	INC RS
+}
+
+!macro ipop {
+	DEC RS
+	DEC RS
+	LDA (RS)
+}
+!macro idrop {
+	DEC RS
+	DEC RS
+}
+
+!macro ipeek {
+	LDA RS
+	STA RA
+	DEC RA
+	DEC RA
+	LDA (RA)
+}

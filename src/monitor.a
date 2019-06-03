@@ -1,0 +1,183 @@
+;; rsbohn 2019-05-20
+;; piebox monitor.a
+	!cpu 65816
+
+	RA = $00
+	RW = $04
+	RS = $08
+
+	KCHAN = $1E
+
+	EV = $0000
+	VIDEO	= $0840
+	TIB	= $6F00
+	STACK	= $7FFF
+	NVECT	= $FFE8
+	EVECT	= $FFFA
+
+	!source "src/macros.a"
+	
+	* = $F000
+COLD:
+	CLC
+	XCE
+	CLI
+
+	+long
+	LDA MSTACK
+	TCS
+
+	JSR ICONSOLE
+	JSR BOOTMSG
+	JSR VSTART
+
+	JSR MSTART
+	;; run the Smalltalk VM
+	JMP BCBOOT
+
+;;;;;;;;;;;;;;;;;;;;
+MSTACK:
+	!word STACK
+
+FVOUT:
+	!byte $10
+FVIN:
+	!byte $08
+CONSOLE:
+	!word $0810
+CONCTL:
+	!word $071E
+ICONSOLE:
+	;; initialize serial console
+	+long
+	PHY
+	PHA
+	LDA CONSOLE
+	STA KCHAN
+	+short
+	LDY CH+03
+	LDA CONCTL
+	STA (KCHAN),Y
+	LDA CONCTL+1
+	DEY
+	STA (KCHAN),Y
+	+long
+	PLA
+	PLY
+	RTS
+
+BOOTMSG:
+	JSR PRINTME
+	!raw "Pluton/0 65816 Computer", $0A, $0D
+	!raw "Edition 2019.06", $0A, $0D, $0A, $00
+	RTS
+
+PRINTME:	;; print the embedded string
+	+long
+	PLA
+	INC
+	STA RA
+	+short
+-	LDA (RA)
+	BEQ +	;; done printing
+	JSR CHOUT
+	INC RA
+	BRA -
++	LDA RA
+	+long
+	PHA
+	RTS
+
+CHIN:
+	+short
+	PHY
+	LDY CH+01
+-	LDA FVIN
+	AND (KCHAN),Y
+	BEQ -
+	LDA (KCHAN)
+	PLY
+	RTS
+	
+CHOUT:
+	+short
+	PHY
+	PHA
+	LDY CH+01
+-	LDA FVOUT
+	AND (KCHAN),Y
+	BEQ -
+	PLA
+	DEY
+	STA (KCHAN),Y
+	PLY
+	RTS
+CRLF:
+	+short
+	LDA NEWLINE
+	JSR CHOUT
+	LDA NEWLINE+1
+	JSR CHOUT
+	RTS
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+VSTART:
+	+short
+	LDX #$00
+-	STX VIDEO
+	LDA VIDEOP,X
+	STA VIDEO+1
+	INX
+	CPX #$10
+	BNE -
+	RTS
+
+VIDEOP:
+	!raw $7F, $50, $60, $08
+	!raw $21, $06, $18, $1C
+	!raw $00, $08, $20, $09
+	!raw $00, $00, $00, $00
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	!source "src/bytecodes.a"
+	!source "src/primitive.a"
+	!source "src/memory.a"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	* = $FFC0
+CH:
+	!byte 0,1,2,3,4,5,6,7,8,9
+
+MPROMPT:
+	!byte '?'
+MSPACE:
+	!byte $20
+NEWLINE:
+	!byte $0A, $0D
+
+
+	* = $FFF0
+ERESET:
+	JMP COLD
+NVIRQ:
+HANG:
+	BRA HANG
+NVABORT:
+NVNMI:
+NVBRK:
+ENMI:
+EIRQ:
+	JMP HANG
+	
+	* = NVECT
+	!word NVABORT
+	!word NVNMI
+	!word NVBRK
+	!word NVIRQ
+	
+	* = EVECT
+	!word ENMI
+	!word ERESET
+	!word EIRQ
+	
