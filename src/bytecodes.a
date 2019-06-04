@@ -320,12 +320,24 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	STA O_FALSE
 	+const $104a
 	STA O_TRUE
+	+const $00FF
+	STA O_TRUE+2
+	+const O_FALSE
+	STA RCC
 	+const $0080
 	STA RS
 	JMP BCDO
 
 BOOTSECTOR:
 	!word *+2
-	!byte $51, $61
+	!byte $50	;; push $0000	(dest databank)
+	!byte $50	;; push $0000	(dest class)
+	!byte $42	;; push BCC[2]	(size=$FF)
+	!byte $D2, $07	;; <7 size class> new object
+			;; i(dest dbank)
+	!byte $51	;; push $0001	(src databank)
+	!byte $58	;; push $0008	(src address)
+	!byte $D2, $31	;; <16r31 src sbank dest dbank> objclone
+	!byte $00, $00	;; stop here
 	!byte $F6
 	!word BOOTSECTOR+2

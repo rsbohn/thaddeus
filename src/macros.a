@@ -60,3 +60,29 @@
 	DEC RA
 	LDA (RA)
 }
+
+;; begin code section in a new data bank
+;; desired bank in register A
+		;; DBR=T A=0V
+!macro dbr_begin {
+	+long
+	PHA	;; r(V 0)
+	PHB	;; r(T V 0)
+	PLA	;; A=TV
+	XBA	;; A=VT
+	PHA	;; r(V T 0)
+	PLB	;; DBR=V r(T 0)
+}
+
+
+;; now the new data bank is active. Be careful!
+
+		;; DBR=V r(T 0)
+!macro dbr_end {
+	PHB	;; r(V T 0)
+	PLA	;; A=VT
+	XBA	;; A=TV
+	PHA	;; r(T V 0)
+	PLB	;; DBR=T r(V 0)
+	PLA	;; A=0V
+}
