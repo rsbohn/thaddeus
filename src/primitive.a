@@ -123,8 +123,19 @@ P_GETCH:
 	+ipush
 	JMP PRIMDONE
 
-P_BYTESALLOT:
+P_PLUS:
 	+next P_GETCH
+	+primitive $000A ;; 10r10 small integer addition (a b -- a+b)
+	+ipop
+	STA RA
+	+ipop
+	CLC
+	ADC RA
+	+ipush
+	JMP PRIMDONE
+
+P_BYTESALLOT:
+	+next P_PLUS
 	+primitive $0014 ;; byteArray alloc
 	;; (size class -- addr)
 	JSR GCIALLOC
