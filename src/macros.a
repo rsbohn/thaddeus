@@ -86,3 +86,24 @@
 	PLB	;; DBR=T r(V 0)
 	PLA	;; A=0V
 }
+
+;; allows modification of the current process
+!macro in_proc {
+	PHD	;; current process (direct page)
+	PLA
+	STA RIV
+}
+;; restore RIV from context->args[0]->ivars
+;; context . receiver . instance variables
+!macro in_context {
+	CLC
+	+const $0006	;; context.args
+	ADC CONTEXT
+	STA RA
+	CLC
+	+const $0004	;; args[0]
+	ADC (RA)
+	STA RA
+	LDA (RA)	;; ivars
+	STA RIV
+}

@@ -158,8 +158,32 @@ BC_CONSTANT:
 	+ipush
 	JMP BCNEXT
 	
-BC_PUSHBLOCK:
-	BRA BC_PUSHBLOCK
+BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
+	STA RA		;; stash 'args location'
+	LDA (RW)	;; get bytecode address
+	+ipush
+	;;; push context to return stack (in case of garbage collection)
+	;;; ??? in case the current context moves but we keep the original???
+	;alloc stack, push to return stack
+	;alloc Block
+	;init block bytePointer, stackTop, previousContext = NULL
+	;block[bytePointerInBlock] = newInteger(bytePointer);
+	;block[argLocationInBlock] = newInteger(RA);
+	;block[stack] = pop from return stack
+	;;; pop context from return stack
+	;if currentContext is a block: block[parent]=context[parent]
+	;if not: block[parent]=context
+	;method=block[method]=context[method]
+	;args=block[args]=context[args]
+	;temps=block[temps]=context[temps]
+	;stack=context[stack]
+	;bp=bytePtr(method[byteCodes])
+	;push block
+	;literals = instanceVariables = 0;
+	;set bytePointer from byteCodes
+	+ipop
+	STA RW
+	JMP BCNEXT
 
 BCIVAR_:
 	;; pop, store in instance variable
@@ -320,7 +344,7 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	STA O_FALSE
 	+const $104a
 	STA O_TRUE
-	+const $00FF
+	+const $0100
 	STA O_TRUE+2
 	+const O_FALSE
 	STA RCC
@@ -341,3 +365,17 @@ BOOTSECTOR:
 	!byte $00, $00	;; stop here
 	!byte $F6
 	!word BOOTSECTOR+2
+
+	!eof
+;; with context
+<$07 $07 #Context>
+$1106			;; set context in process
+			;; set method in context
+			;; set arguments in context
+			;; etc
+;; expect in $01:0000
+[method]
+[bytecodes]
+[literals]
+[empty array]
+;; fills up to $01:0100
