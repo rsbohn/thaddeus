@@ -275,8 +275,41 @@ P_OBJCLONE:
 	+dbr_end	;; restore DBR
 	JMP PRIMDONE
 
-PRIMAX:
+P_KEYSTONE:
 	+next P_OBJCLONE
+	+primitive $32 ;; 10r50 KEYSTONE (dest bytes -- ) D2 32
+	+ipop
+	STA RCT
+	INC
+	STA RCC
+	+ipop
+	STA RA
+	LDA (RA)
+	BPL .nope
+	INC RA		;; skip to the data
+	INC RA
+	INC RA
+	INC RA
+	AND $0FFF	;; $00FF
+	SEP #$20	;; short A
+	STA RIV+3	;; hold that
+	LDA #$00
+	TAY
+	
+-	STA (RCT)	;; set register address
+	LDA (RA),Y
+	STA (RCC)	;; set register value
+	INY
+	TYA
+	CMP RIV+3
+	BNE -
+
+	+long
+.nope:
+	JMP PRIMDONE
+
+PRIMAX:
+	+next P_KEYSTONE
 SETCLASS:
 	;; i(object class -- object)
 	+ipop

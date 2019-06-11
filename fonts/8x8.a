@@ -34,8 +34,8 @@ CG_END:
 	TAX
 	+const $0200	;; start at $20 character
 	TAY
--	!as		;; short A
-	LDA #$08
+	SEP #$20	;; short A
+-	LDA #$08
 	STA $01
 	JSR .CELL	;; 8 bytes character data
 	LDA #$08
@@ -49,6 +49,7 @@ CG_END:
 .CELL			;; mirror and fill 8 bytes
 	LDA .U0020,X
 	STA $00
+	CLC
 	ROR $00		;; mirror the byte
 	ROL
 	ROR $00

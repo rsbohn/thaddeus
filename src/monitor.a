@@ -14,6 +14,7 @@
 	STACK	= $7FFF
 	NVECT	= $FFE8
 	EVECT	= $FFFA
+	CGFILL	= $012000	;; fill chargen
 
 	!source "src/macros.a"
 	
@@ -30,6 +31,7 @@ COLD:
 	JSR ICONSOLE
 	JSR BOOTMSG
 	JSR VSTART
+	JSL CGFILL
 
 	JSR MSTART
 	;; run the Smalltalk VM
