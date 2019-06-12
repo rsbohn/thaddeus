@@ -1,0 +1,48 @@
+;; simple bytecode tests
+!macro if_true .label {
+	;; branch if true
+	!byte $F7
+	!word .label
+	;; otherwise P_TRAP
+	!byte $D0, $13
+}
+!macro if_false .label {
+	;; pass if false
+	!byte $F7
+	!word .label
+	;; otherwise P_TRAP
+	!byte $D0, $13
+}
+
+	* = $1000
+T_IDENTITY:
+	; const, const, object identity, branch on pass, trap
+	!byte $50, $50, $D2, $01
+	+if_true .ID01
+.ID01:	!byte $51, $51, $D2, $01
+	+if_true .ID02
+.ID02:	!byte $50, $51, $D2, $01
+	+if_false .IDFF
+
+.SUCCESS:
+	; get RIV+8, P_PUTCH, P_DROP
+	!byte $14, $D1, $03, $F5
+.IDFF:
+	!byte $F6
+	!word .SUCCESS
+
+;;;;;;;;;;;
+VARS:
+	!word $0002
+	!word $000B	;; pseudoclass Array
+	!word PASS
+	!word FAIL
+
+PASS:	
+	!word $8004
+	!word $000C	;; pseudoclass String
+	!raw "PASS"
+FAIL:
+	!word $8004
+	!word $000C
+	!raw "FAIL"

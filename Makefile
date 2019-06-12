@@ -10,3 +10,6 @@ char.bin: fonts/8x8.a
 image.bin: image.a
 	acme -f plain -o $@ image.a
 
+test.bin: test/*.a
+	acme -f plain -o $@ $<
+

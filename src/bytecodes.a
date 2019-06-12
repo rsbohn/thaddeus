@@ -158,14 +158,61 @@ BC_CONSTANT:
 	+ipush
 	JMP BCNEXT
 	
+	.ARGS = $20
+	.CX = $22
 BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
-	STA RA		;; stash 'args location'
-	LDA (RW)	;; get bytecode address
-	+ipush
+	STA .ARGS	;; stash 'args location'
 	;;; push context to return stack (in case of garbage collection)
 	;;; ??? in case the current context moves but we keep the original???
-	;alloc stack, push to return stack
-	;alloc Block
+			;alloc stack
+	+const $0020
+	+ipush
+	JSR GCALLOC	;; i(stack )
+			;alloc Block
+	+const $000A
+	JSR GCALLOC	;; i(block stack )
+
+	+ipop
+	STA RA
+	+const $0004	;; now fill in block variables
+	TAY
+	LDA (.CX),Y	;; method
+	STA (RA),Y
+	INY
+	INY
+	LDA .ARGS	;; args
+	STA (RA),Y
+	INY
+	INY
+	LDA RCT		;; temps
+	STA (RA),Y
+	INY
+	INY
+	+ipop		;; stack
+	STA (RA),Y
+	INY
+	INY
+	+const $0000	;; stackTop
+	STA (RA),Y
+	INY
+	INY
+	STA (RA),Y	;; prev context
+	INY
+	INY
+	LDA .ARGS	;; args
+	STA (RA),Y
+	INY
+	INY
+	LDA .CX		;; yes unless context itself is a block
+	STA (RA),Y
+	INY
+	INY
+	LDA (RW)
+	STA (RA),Y
+
+	LDA RA
+	+ipush
+
 	;init block bytePointer, stackTop, previousContext = NULL
 	;block[bytePointerInBlock] = newInteger(bytePointer);
 	;block[argLocationInBlock] = newInteger(RA);
@@ -181,8 +228,9 @@ BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 	;push block
 	;literals = instanceVariables = 0;
 	;set bytePointer from byteCodes
-	+ipop
-	STA RW
+
+	INC RW
+	INC RW
 	JMP BCNEXT
 
 BCIVAR_:
