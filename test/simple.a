@@ -8,14 +8,50 @@
 }
 !macro if_false .label {
 	;; pass if false
-	!byte $F7
+	!byte $F8
 	!word .label
 	;; otherwise P_TRAP
 	!byte $D0, $13
 }
 
+;; placeholder constants
+	PCONTEXT = $C001
+	PMETHOD = $C002
+	PARRAY = $C003
+	PBYTEARRAY = $C004
+	PSTRING = $C005
+
+	.NIL = $EF02
 	* = $1000
+;; a context
+	!word $0007
+	!word PCONTEXT
+	!word .METHOD
+	!word .ARGS
+	!word .TEMPS
+	!word $0080	;; stack
+	!word $0000	;; bytePointer
+	!word $0080	;; stack top
+	!word .NIL
+
+.METHOD:
+	!word $0007
+	!word PMETHOD
+	!word .SIMPLE		;; name
+	!word T_IDENTITY	;; byteCodes
+	!word .LITERALS
+	!word $0010		;; stackSize
+	!word $0010		;; temporarySize
+	!word PCONTEXT		;; class (of this method)
+	!word .SIMPLE		;; text (not really)
+
+.LITERALS:
+	!fill $10, $00		;; who knows?
+.TEMPS:
+	!fill $10, $00		;; room for temps
+	
 T_IDENTITY:
+	!word $8000+T_END-*
 	; const, const, object identity, branch on pass, trap
 	!byte $50, $50, $D2, $01
 	+if_true .ID01
@@ -30,23 +66,29 @@ T_IDENTITY:
 .IDFF:
 	!byte $F6
 	!word .SUCCESS
-
+T_END:
+	!word $FFFF
 ;;;;;;;;;;;
 ;; msg to screen: 
-	56 51 13 50 12 D5 30 F6 30 
-	count destbank dest srcbank src $D5 30 (P_BLIT)
-VARS:
+;;	56 51 13 50 12 D5 30 F6 30 
+;;	count destbank dest srcbank src $D5 30 (P_BLIT)
+.ARGS:
 	!word $0003
-	!word $000B	;; pseudoclass Array
+	!word PARRAY	;; pseudoclass Array
 	!word PASS
 	!word FAIL
 	!word $8000	;; screen (bank 1)
 
 PASS:	
 	!word $8004
-	!word $000C	;; pseudoclass String
+	!word PSTRING	;; pseudoclass String
 	!raw "PASS"
 FAIL:
 	!word $8004
-	!word $000C
+	!word PSTRING
 	!raw "FAIL"
+
+.SIMPLE:
+	!word $8004
+	!word PSTRING
+	!raw "test"
