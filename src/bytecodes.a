@@ -383,47 +383,34 @@ BCFAIL:
 
 BCBOOT:	;; set up the VM, run BOOTSECTOR
 	+long
-	LDA BOOTSECTOR
+	;; assume we have a context object at $1000
+	+const $1000
+	STA .CX		;; need a better name for that
+	;; context[method]
+	+const $0004
+	CLC
+	ADC .CX
+	STA RA
+	LDA (RA)
+	STA RA		;; *context+4 = method
+	;; method[byteCodes]
+	+const $0006
+	CLC
+	ADC RA
+	STA RA
+	LDA (RA)
 	STA RW
-	STZ RIV
-	STZ RIV+2
-	;; set O_TRUE and O_FALSE
-	+const $1038
-	STA O_FALSE
-	+const $104a
-	STA O_TRUE
-	+const $0100
-	STA O_TRUE+2
-	+const O_FALSE
-	STA RCC
-	+const $0080
+	;; go to byteCode zero (skip the 2 byte header)
+	+const $0002
+	CLC
+	ADC RW
+	STA RW
+	;; get the stack address
+	+const $000A
+	CLC
+	ADC .CX
+	STA RA
+	LDA (RA)
 	STA RS
 	JMP BCDO
 
-BOOTSECTOR:
-	!word *+2
-	!byte $50	;; push $0000	(dest databank)
-	!byte $50	;; push $0000	(dest class)
-	!byte $42	;; push BCC[2]	(size=$FF)
-	!byte $D2, $07	;; <7 size class> new object
-			;; i(dest dbank)
-	!byte $51	;; push $0001	(src databank)
-	!byte $58	;; push $0008	(src address)
-	!byte $D2, $31	;; <16r31 src sbank dest dbank> objclone
-	!byte $00, $00	;; stop here
-	!byte $F6
-	!word BOOTSECTOR+2
-
-	!eof
-;; with context
-<$07 $07 #Context>
-$1106			;; set context in process
-			;; set method in context
-			;; set arguments in context
-			;; etc
-;; expect in $01:0000
-[method]
-[bytecodes]
-[literals]
-[empty array]
-;; fills up to $01:0100
