@@ -400,8 +400,8 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	STA RA
 	LDA (RA)
 	STA RW
-	;; go to byteCode zero (skip the 2 byte header)
-	+const $0002
+	;; go to byteCode zero (skip the 4 byte header)
+	+const $0004
 	CLC
 	ADC RW
 	STA RW

@@ -52,6 +52,7 @@
 	
 T_IDENTITY:
 	!word $8000+T_END-*
+	!word PBYTEARRAY
 	; const, const, object identity, branch on pass, trap
 	!byte $50, $50, $D2, $01
 	+if_true .ID01
