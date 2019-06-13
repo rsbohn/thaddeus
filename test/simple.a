@@ -61,12 +61,16 @@ T_IDENTITY:
 .ID02:	!byte $50, $51, $D2, $01
 	+if_false .IDFF
 
-.SUCCESS:
+.IDFF:
 	; get RIV+8, P_PUTCH, P_DROP
 	!byte $14, $D1, $03, $F5
-.IDFF:
+	; we're done - idle this process
+	!byte $50, $D1, $40
+	; so the interpreter keeps running
+	; if the process is reactivated do it all again
 	!byte $F6
-	!word .SUCCESS
+	!word T_IDENTITY+4
+
 T_END:
 	!word $FFFF
 ;;;;;;;;;;;
