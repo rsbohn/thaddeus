@@ -12,6 +12,7 @@
 	RCA = $14
 	RCT = $16
 	RCC = $18
+	RPS = $0C
 	NEXTPROC = $0E
 BCTAB:
 	!word BC_EXTD		;; 00

@@ -308,8 +308,15 @@ P_KEYSTONE:
 .nope:
 	JMP PRIMDONE
 
-PRIMAX:
+P_PROCSET:
 	+next P_KEYSTONE
+	+primitive $40 ;; 10r64 PROCSET (status --) D1 40
+	+ipop
+	STA RPS
+	JMP PRIMDONE
+
+PRIMAX:
+	+next P_PROCSET
 SETCLASS:
 	;; i(object class -- object)
 	+ipop
