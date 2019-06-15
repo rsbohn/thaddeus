@@ -9,11 +9,13 @@
 	KCHAN = $1E
 
 	EV = $0000
+	VIA0	= $0800
 	VIDEO	= $0840
 	TIB	= $6F00
 	STACK	= $7FFF
 	NVECT	= $FFE8
 	EVECT	= $FFFA
+	VRAM	= $8000		;; in databank $01
 	CGFILL	= $012000	;; fill chargen
 
 	!source "src/macros.a"
@@ -29,7 +31,7 @@ COLD:
 	TCS
 
 	JSR ICONSOLE
-	JSR BOOTMSG
+	;JSR BOOTMSG
 	JSR VSTART
 	JSL CGFILL
 
@@ -90,7 +92,7 @@ PRINTME:	;; print the embedded string
 	PHA
 	RTS
 
-CHIN:
+EIAIN:
 	+short
 	PHY
 	LDY CH+01
@@ -101,7 +103,7 @@ CHIN:
 	PLY
 	RTS
 	
-CHOUT:
+EIAOUT:
 	+short
 	PHY
 	PHA
@@ -122,6 +124,28 @@ CRLF:
 	JSR CHOUT
 	RTS
 
+	.IRA	= $01
+	.IFR	= $0D
+
+CHIN:
+	+short
+-	+byteAt .IFR, VIA0
+	AND #$02
+	BEQ -
+	SEI
+	+byteAt .IFR, VIA0
+	EOR #$02
+	+byteAtPut .IFR, VIA0
+	CLI
+	+byteAt .IRA, VIA0
+	RTS
+
+CHOUT:
+	+long
+	SEP #$20
+	STA $018000
+	+long
+	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 VSTART:
 	+short

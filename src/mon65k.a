@@ -1,0 +1,121 @@
+;; rsbohn 2019-06-14
+;; mon65k.a -- monitor for ec65k
+
+	!cpu 65816
+
+	RA = $00
+	RW = $04
+	RS = $08
+
+	EV = $0000
+	VIA0 = $E100
+	VRAM = $E800
+	VIDEO = $E140
+	STACK = $7FFF
+	NVECT = $FFE8
+	EVECT = $FFFA
+
+	!source "src/macros.a"
+
+	* = $F000
+COLD:
+	CLC
+	XCE
+	CLI
+
+	+long
+	+const STACK
+	TCS
+
+	JSR VSTART
+	JSR MSTART
+	JMP BCBOOT
+
+.VP:
+	!word $8010		;; size
+	!word $EF10		;; class ByteArray
+	!hex 7f5060082106181C
+	!hex 0008200900000000
+
+VSTART:
+	+const .VP+$04
+	STA RA
+	+const $0000
+	TAY
+	+short
+-	LDA (RA),Y
+	STY VIDEO
+	STA VIDEO+1
+	INY
+	CPY .VP
+	BNE -
+	RTS
+
+	.IFR = $0D
+	.IRA = $01
+CHIN:	;; wait for key from keyboard
+	+short
+-	+byteAt .IFR, VIA0
+	AND #$02
+	BEQ -
+	SEI
+	+byteAt .IFR, VIA0
+	EOR #$02
+	+byteAtPut .IFR, VIA0
+	CLI
+	+byteAt .IRA, VIA0
+	RTS
+
+CHOUT:	;; emit char in A register
+	+long
+	+const VRAM
+	STA RA
+	SEP #$20	;; short A
+	STA (RA)
+	+long
+	RTS
+
+PRINTME:
+	+long
+	PLA
+	INC
+	STA RA
+	+short
+-	LDA (RA)
+	BEQ +
+	JSR CHOUT
+	INC RA
+	BRA -
++	+long
+	LDA RA
+	PHA
+	RTS
+
+	!source "src/bytecodes.a"
+	!source "src/primitive.a"
+	!source "src/memory.a"
+
+	* = $FFF0
+ERESET:
+	JMP COLD
+
+NVIRQ:
+NVABORT:
+NVNMI:
+NVBRK:
+
+ENMI:
+EIRQ:
+HANG:
+	BRA HANG
+
+	* = NVECT
+	!word NVABORT
+	!word NVNMI
+	!word NVBRK
+	!word NVIRQ
+
+	* = EVECT
+	!word ENMI
+	!word ERESET
+	!word EIRQ

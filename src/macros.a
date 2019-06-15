@@ -29,6 +29,21 @@
 +
 }
 
+!macro byteAt .point, .addr {
+	+short
+	PHX
+	LDX .point
+	LDA .addr,X
+	PLX
+}
+!macro byteAtPut .point, .addr {
+	+short
+	PHX
+	LDX .point
+	STA .addr,X
+	PLX
+}
+
 ;; convert ordinal offset to a cell offset
 !macro cells {
 	ASL
