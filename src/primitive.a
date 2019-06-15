@@ -53,13 +53,13 @@ PRIMDONE:
 }
 P_TRAP:
 	+next $0000
-	+primitive $0013 ;; error trap or primitive not found
+	+primitive $13 ;; error trap or primitive not found
 .TRAP
 	BRA .TRAP
 
 P_IDENT:
 	+next P_TRAP
-	+primitive $0001 ;; identity
+	+primitive $01 ;; identity
 	+ipop
 	STA RA
 	+ipop
@@ -74,7 +74,7 @@ P_IDENT:
 
 P_OCLASS:
 	+next P_IDENT
-	+primitive $0002 ;; get class of object
+	+primitive $02 ;; get class of object
 	+ipop
 	STA RA
 	+const $0002	;; object is [size] [class] [stuff...]
@@ -85,7 +85,7 @@ P_OCLASS:
 
 P_PUTCH:
 	+next P_OCLASS
-	+primitive $0003 ;; print a single character
+	+primitive $03 ;; print a single character
 	+ipop
 	JSR CHOUT
 	+long
@@ -95,7 +95,7 @@ P_PUTCH:
 
 P_OSIZE:
 	+next P_PUTCH
-	+primitive $0004 ;; object size
+	+primitive $04 ;; object size
 	+ipop
 	STA RA
 	LDA (RA)
@@ -104,7 +104,7 @@ P_OSIZE:
 
 P_NEWOBJ:
 	+next P_OSIZE
-	+primitive $0007 ;; new object allocation
+	+primitive $07 ;; new object allocation
 	;; i(size class -- object)
 	JSR GCALLOC	;; (size -- object)
 	JSR SETCLASS	;; (object class -- object)
@@ -113,7 +113,7 @@ P_NEWOBJ:
 
 P_GETCH:
 	+next P_NEWOBJ
-	+primitive $0009 ;; get a character
+	+primitive $09 ;; get a character
 	JSR CHIN
 	+long
 	AND RAMASK
@@ -122,7 +122,7 @@ P_GETCH:
 
 P_PLUS:
 	+next P_GETCH
-	+primitive $000A ;; 10r10 small integer addition (a b -- a+b)
+	+primitive $0A ;; 10r10 small integer addition (a b -- a+b)
 	+ipop
 	STA RA
 	+ipop
@@ -133,7 +133,7 @@ P_PLUS:
 
 P_BYTESALLOT:
 	+next P_PLUS
-	+primitive $0014 ;; byteArray alloc
+	+primitive $14 ;; byteArray alloc
 	;; (size class -- addr)
 	JSR GCIALLOC
 	JSR SETCLASS
@@ -141,7 +141,7 @@ P_BYTESALLOT:
 
 P_STRAT:
 	+next P_BYTESALLOT
-	+primitive $0015 ;; string at:
+	+primitive $15 ;; string at:
 	;; (point addr -- value)
 	+ipop
 	DEC ;because yeah arrays start a 1
@@ -159,7 +159,7 @@ P_STRAT:
 
 P_STRATPUT:
 	+next P_STRAT
-	+primitive $0016 ;; string at:put:
+	+primitive $16 ;; string at:put:
 	;; (point addr value -- addr)
 	+ipop
 	DEC ; see previous
@@ -180,7 +180,7 @@ P_STRATPUT:
 
 P_STRCLONE:
 	+next P_STRATPUT
-	+primitive $0017 ;; string clone 10r23 (class string -- clone)
+	+primitive $17 ;; string clone 10r23 (class string -- clone)
 	+ipop
 	PHA	;; save the class
 	+ipop
@@ -217,7 +217,7 @@ P_STRCLONE:
 
 P_BLIT:
 	+next P_STRATPUT
-	+primitive $0030 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
+	+primitive $30 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
 	+long
 	+ipop
 	STA RA
