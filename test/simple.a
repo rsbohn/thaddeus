@@ -15,6 +15,7 @@
 }
 
 ;; placeholder constants
+;; these don't have to match anything
 	PCONTEXT = $C001
 	PMETHOD = $C002
 	PARRAY = $C003
@@ -69,7 +70,7 @@ T_IDENTITY:
 	; so the interpreter keeps running
 	; if the process is reactivated do it all again
 	!byte $F6
-	!word T_IDENTITY+4
+	!word $0000	;; back to the start
 
 T_END:
 	!word $FFFF

@@ -81,7 +81,7 @@ BCJUMP:
 	PLA
 	JMP (EV)
 
-BCNEXT:	
+BCNEXT:
 	+long
 	LDA $0E		;; go to the next process
 	TCD
@@ -157,7 +157,7 @@ BC_CONSTANT:
 	LDA (RA)
 	+ipush
 	JMP BCNEXT
-	
+
 	.ARGS = $2E
 BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 	STA .ARGS	;; stash 'args location'
@@ -344,13 +344,20 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	DEC RS
 	DEC RS
 	JMP BCNEXT
+
 +	INC RA ;; Special $06 Branch
 	CMP RA
 	BNE +
-	;; branch (absolute)
+	;; branch relative byteCodes start
+ESP6:	+const $0006
+	TAY
+	LDA (RCM),Y	;; method[byteCodes]
+	+ipush
 	LDA (RW)
-	STA RW
+	;; A+i[0]
+	+iplusA
 	JMP BCNEXT2
+
 +	INC RA	;; Special $07 BranchIfTrue
 	CMP RA
 	BNE +
@@ -383,7 +390,7 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	BRK 
 	BRK
 	BRA BCFAIL
-	
+
 
 .RETURN:
 	PLA
@@ -400,39 +407,33 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+long
 	;; Do we have a context object at $1000?
 	+const $1000
-	STA RCX	
+	STA RCX
 	+const $0002
 	TAY
-	LDA (RCX),Y
+	LDA (RCX),Y	;; context[class]
 	CMP C_CONTEXT
 	BEQ +
 	;; context[method]
 	+const BOOTSECTOR
 	STA RCX
 +	+const $0004
-	CLC
-	ADC RCX
-	STA RA
-	LDA (RA)
-	STA RA		;; *context+4 = method
+	TAY
+	LDA (RCX),Y	;; context[method]
+	STA RCM
 	;; method[byteCodes]
 	+const $0006
-	CLC
-	ADC RA
+	TAY
+	LDA (RCM),Y	;; method[byteCodes]
 	STA RA
-	LDA (RA)
-	STA RW
 	;; go to byteCode zero (skip the 4 byte header)
 	+const $0004
 	CLC
-	ADC RW
+	ADC RA		;; byteCodes+4
 	STA RW
 	;; get the stack address
 	+const $000A
-	CLC
-	ADC RCX
-	STA RA
-	LDA (RA)
+	TAY
+	LDA (RCX),Y	;; context[stackPointer]
 	STA RS
 	JMP BCDO
 

@@ -122,3 +122,11 @@
 	LDA (RA)	;; ivars
 	STA RIV
 }
+
+;; add top of i-stack to A register
+!macro iplusA {		;; i(n -- ), A=A+n
+	DEC RS
+	DEC RS
+	CLC
+	ADC (RS)
+}
