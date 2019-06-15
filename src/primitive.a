@@ -4,16 +4,13 @@
 
 	;; arg count in register A
 	;; next in bytecode is primitive number
-	ARGC = $20
-	CONTEXT = $22
 	;; Primitive dictionary:
 	;; NEXT: pointer to next entry
 	;; ID: 
 	;; then code
 
 PRIMDO:
-	STA ARGC
-	LDA CONTEXT
+	LDA RCX
 	PHA
 
 PFIND:
@@ -38,7 +35,7 @@ PFIND:
 
 PRIMDONE:
 	PLA
-	STA CONTEXT
+	STA RCX
 	RTS
 
 	.TRUE = $F2
@@ -77,7 +74,7 @@ P_IDENT:
 
 P_OCLASS:
 	+next P_IDENT
-	+primitive $0002 ;; object class
+	+primitive $0002 ;; get class of object
 	+ipop
 	STA RA
 	+const $0002	;; object is [size] [class] [stuff...]
@@ -183,8 +180,7 @@ P_STRATPUT:
 
 P_STRCLONE:
 	+next P_STRATPUT
-	+primitive $0017 ;; string clone 10r23
-	;; (class string -- clone)
+	+primitive $0017 ;; string clone 10r23 (class string -- clone)
 	+ipop
 	PHA	;; save the class
 	+ipop
@@ -221,8 +217,7 @@ P_STRCLONE:
 
 P_BLIT:
 	+next P_STRATPUT
-	+primitive $0030 ;; 10r48 blit $D5 $30 . . . . .
-	;; i(src sbank dest dbank count --)
+	+primitive $0030 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
 	+long
 	+ipop
 	STA RA

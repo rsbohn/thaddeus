@@ -3,17 +3,16 @@
 	!cpu 65816
 
 	;; RA scratch $00
-	;; RB -> code literals $04
-	;; RC -> method args, temps $08
-	;; RD -> instance vars $0C
-	;; RS -> interpreter stack pointer $10
-	;; RW -> current bytecode $14
+	;; RW byteCode pointer $04
+	;; RS instance stack pointer $08
+	RPS = $0C	;; process status
+	RPN = $0E	;; next process
 	RIV = $10
-	RCA = $14
-	RCT = $16
-	RCC = $18
-	RPS = $0C
-	NEXTPROC = $0E
+	RCA = $14	;; args
+	RCT = $16	;; temporaries
+	RCC = $18	;; context literals
+	RCX = $20	;; context
+	RCM = $22	;; method
 BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
@@ -159,8 +158,7 @@ BC_CONSTANT:
 	+ipush
 	JMP BCNEXT
 	
-	.ARGS = $20
-	.CX = $22
+	.ARGS = $2E
 BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 	STA .ARGS	;; stash 'args location'
 	;;; push context to return stack (in case of garbage collection)
@@ -177,7 +175,7 @@ BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 	STA RA
 	+const $0004	;; now fill in block variables
 	TAY
-	LDA (.CX),Y	;; method
+	LDA (RCX),Y	;; method
 	STA (RA),Y
 	INY
 	INY
@@ -204,7 +202,7 @@ BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 	STA (RA),Y
 	INY
 	INY
-	LDA .CX		;; yes unless context itself is a block
+	LDA RCX		;; yes unless context itself is a block
 	STA (RA),Y
 	INY
 	INY
@@ -284,7 +282,19 @@ BC_MARK:	;; bytecode $09 10r09 MarkArguments
 	JMP BCNEXT
 
 
-BC_SEND:
+BC_SEND: ;; A=message i(args)
+	JMP BCFAIL	;; not ready
+	;; args = #(receiver ...)
+	TAY
+	LDA RCC,Y	;; messageSelector
+	PHA		;; r(messageSelector)
+	+ipop
+	STA RA
+	+const $0000+4
+	TAY
+	LDA (RA),Y	;; receiver
+	PHA		;; r(receiver messageSelector)
+
 BC_SEND1:
 BC_SEND2:
 	JMP BCFAIL
@@ -382,15 +392,26 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 BCFAIL:
 	BRA BCFAIL
 
-BCBOOT:	;; set up the VM, run BOOTSECTOR
+C_ARRAY:	!word $C00A
+C_BYTES:	!word $C00B
+C_CONTEXT:	!word $C00C
+C_METHOD:	!word $C00D
+BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+long
-	;; assume we have a context object at $1000
+	;; Do we have a context object at $1000?
 	+const $1000
-	STA .CX		;; need a better name for that
+	STA RCX	
+	+const $0002
+	TAY
+	LDA (RCX),Y
+	CMP C_CONTEXT
+	BEQ +
 	;; context[method]
-	+const $0004
+	+const BOOTSECTOR
+	STA RCX
++	+const $0004
 	CLC
-	ADC .CX
+	ADC RCX
 	STA RA
 	LDA (RA)
 	STA RA		;; *context+4 = method
@@ -409,9 +430,50 @@ BCBOOT:	;; set up the VM, run BOOTSECTOR
 	;; get the stack address
 	+const $000A
 	CLC
-	ADC .CX
+	ADC RCX
 	STA RA
 	LDA (RA)
 	STA RS
 	JMP BCDO
 
+!zone bootsector {
+	.NIL = $EF02
+BOOTSECTOR:
+	!word $0007
+	!word $C00C	;; context
+	!word .METHOD
+	!word .ARGS
+	!word $0040	;; temps -- put in RAM
+	!word .STACK
+	!word $0000	;; bytePointer
+	!word $0000	;; stackTop
+	!word .NIL	;; parent context
+
+.METHOD:
+	!word $0007
+	!word $C00D
+	!word .BOOT	;; method name
+	!word .BCODE	;; byteCodes
+	!word .LITERALS
+	!word $0010	;; stackSize
+	!word $0010	;; temporarySize
+	!word $0000	;; class of method (nil)
+	!word .BOOT	;; 'text' of method
+.BOOT:
+	!word $8004	;; size
+	!word $C010	;; String
+	!raw "boot"
+.BCODE:
+	!byte $50, $D1, $40	;; idle
+	!byte $F6, $00, $00	;; repeat
+.LITERALS:
+	!fill $10, $00
+.STACK:
+	!fill $10, $00
+.ARGS:
+	!word $0003
+	!word $C00A	;; Array
+	!word $0000
+	!word $0001
+	!word $0002
+}
