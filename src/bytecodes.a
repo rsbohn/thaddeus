@@ -444,7 +444,7 @@ BOOTSECTOR:
 	!word .METHOD
 	!word .ARGS
 	!word $0040	;; temps -- put in RAM
-	!word .STACK
+	!word $0080	;; stack in page zero
 	!word $0000	;; bytePointer
 	!word $0000	;; stackTop
 	!word .NIL	;; parent context
@@ -464,11 +464,11 @@ BOOTSECTOR:
 	!word $C010	;; String
 	!raw "boot"
 .BCODE:
+	!word $0006
+	!word $C00B		;; ByteArray
 	!byte $50, $D1, $40	;; idle
 	!byte $F6, $00, $00	;; repeat
 .LITERALS:
-	!fill $10, $00
-.STACK:
 	!fill $10, $00
 .ARGS:
 	!word $0003
