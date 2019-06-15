@@ -353,9 +353,13 @@ ESP6:	+const $0006
 	TAY
 	LDA (RCM),Y	;; method[byteCodes]
 	+ipush
+	+const $0004	;; skip the header
+	+iplusA
+	+ipush
 	LDA (RW)
 	;; A+i[0]
 	+iplusA
+	STA RW
 	JMP BCNEXT2
 
 +	INC RA	;; Special $07 BranchIfTrue
