@@ -27,13 +27,17 @@ S_TOP:	!word PSYM-2
 
 FBIN:	!word $8000	;; marks memory object as binArray
 	
-
+	GLOBAL = $EF02
 MSTART:
 	+long
 	LDA MZERO
 	STA PMEM
 	LDA SZERO
 	STA PSYM
+	+const ($F000-GLOBAL-4)/2
+	STA GLOBAL
+	+const GLOBAL
+	STA GLOBAL+2
 	RTS
 
 MEM_EXHAUSTED:
@@ -81,6 +85,18 @@ GCIALLOC:	;; i(size -- addr) size is BYTES
 	BEQ +
 	INC PMEM
 +	LDA RA
+	+ipush
+	RTS
+
+SETCLASS:	;; i(object class -- object)
+	+ipop
+	PHA
+	INC
+	INC	;; now A has object->class addr
+	STA RA
+	+ipop
+	STA (RA)
+	PLA
 	+ipush
 	RTS
 

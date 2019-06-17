@@ -13,6 +13,10 @@
 	RCC = $18	;; context literals
 	RCX = $20	;; context
 	RCM = $22	;; method
+
+	PFSLEEP = $00
+	PFRUN	= $01
+	PFPRETEXT = $02
 BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
@@ -248,52 +252,123 @@ BCTVAR_:
 	JMP BCNEXT
 
 BC_MARK:	;; bytecode $09 10r09 MarkArguments
-	;; collect arguments from stack into an array
-	;; maybe reload context
-	TAY	;; value (low)
-	;LDA CONTEXT
-	;+ipush
-	TYA
-	+ipush	;; i(size )
-	+ipush	;; i(size size )
-	JSR GCALLOC
-		;; i(args size )
-	INC
-	INC
-	STA RA
-	;;LDA ArrayClass
-	;;STA (RA)
-	EOR RA	;; zero for now
-	STA (RA)
-	;; pop arguments from stack
-	+ipop	;; args array
-	STA RA
-	+ipop	;; size in words
-	ASL	;; words to bytes
+	;; collect (low) arguments from stack into an array
+	+ipush		;; i(n ...)
+	PHA		;; r(n) i(n ...)
+	+const $C00A
+	+ipush		;; i(Array n ...)
+	PLA		;; r()
+	+ipush		;; i(n Array n ...)
+	JSR GCALLOC	;; i(args Array n ...)
+	JSR SETCLASS	;; i(args n ...)
+	PHA		;; r(args)
+
+	+const $0004
+	+iplusA
+	STA RA		;; now RA = args[data]
+	+ipop	;; A=n
+	DEC	;; because arrays start at 1
+	+cells	;; Y needs to count bytes
 	TAY
+	;; pop arguments from stack
 -	+ipop
 	STA (RA),Y
 	DEY
 	DEY
 	BPL -
 	;; push arguments 
-	LDA RA
-	+ipop
+	PLA
+	+ipush		;; i(args)
 	JMP BCNEXT
 
 
 BC_SEND: ;; A=message i(args)
 	JMP BCFAIL	;; not ready
-	;; args = #(receiver ...)
+
+	PHA		;; save 'message'
+	LDA RCX
+	+ipush		;; i(context args)
+	+const $C00C	;; Context
+	+ipush		;; i(Context context args)
+	+const $0007
+	+ipush		;; i(size Context context args)
+	JSR GCALLOC
+	JSR SETCLASS	;; i(newContext context args)
+
+	+ipop		;; i(context args)
+	STA RCX		;; RCX is now the new context!
+	+const $000C+4	;; context[previousContext]
 	TAY
-	LDA RCC,Y	;; messageSelector
+	+ipop		;; i(args)
+	STA (RCX),Y
+
+	+const $0002+4	;; context[args]
+	TAY
+	+ipeek
+	STA (RCX),Y
+
+	;; messageSelector = RCC[message] -- zero based
+	PLY		;; retrieve 'message' from r()
+	LDA RCC,Y	;; messageSelector=literals[message]
 	PHA		;; r(messageSelector)
-	+ipop
+	+ipeek		;; args
 	STA RA
 	+const $0000+4
 	TAY
 	LDA (RA),Y	;; receiver
-	PHA		;; r(receiver messageSelector)
+	;; method = lookupMethod(messageSelector, receiverClass)
+	+ipush
+	PLA
+	+ipush		;; i(messageSelector, receiverClass args)
+	JSR MLOOKUP	;; i(method args)
+	STA RA		;; copy of 'method' in RA
+
+	+const $C00A	;; Array
+	+ipush		;; i(Array method args)
+	+const $0004+4	;; method[tempSize]
+	TAY
+	LDA (RA),Y
+	+ipush		;; i(tempSize Array method args)
+	JSR GCALLOC	;; i(temps Array method args)
+	JSR SETCLASS	;; i(temps method args)
+
+	;; set stackTop in context
+	;; set bytePointer in context
+	;; clone the context:
+	+const $C00C	;; Context
+	+ipush
+	+const $0007	;; Context size
+	JSR GCALLOC
+	JSR SETCLASS
+	+ipop
+	STA RA
+
+	+const $0004+4	;; context[temporaries]
+	TAY
+	+ipop		;; A=temps i(method args)
+	STA (RA),Y
+
+	+const $000C+4	;; context[previousContext]
+	TAY
+	LDA RCX
+	STA (RA),Y
+
+	+const $0000+4	;; context[method]
+	TAY
+	+ipop		;; A=method i(args)
+	STA (RA),Y
+
+	+const $0002+4	;; context[args]
+	TAY
+	+ipop		;; A=args i()
+	STA (RA),Y
+
+	;; set the rest of the context elements
+	LDA RA
+	STA RCX
+	+const PFPRETEXT
+	STA RPS
+	JMP BCNEXT2	;; allow break on SEND
 
 BC_SEND1:
 BC_SEND2:
@@ -402,6 +477,14 @@ ESP6:	+const $0006
 
 BCFAIL:
 	BRA BCFAIL
+
+MLOOKUP:
+	;; placeholder implementation
+	+ipop
+	+ipop
+	+const $0030
+	+ipush
+	RTS
 
 C_ARRAY:	!word $C00A
 C_BYTES:	!word $C00B

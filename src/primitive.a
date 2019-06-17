@@ -312,15 +312,3 @@ P_PROCSET:
 
 PRIMAX:
 	+next P_PROCSET
-SETCLASS:
-	;; i(object class -- object)
-	+ipop
-	PHA
-	INC
-	INC	;; now A has object->class addr
-	STA RA
-	+ipop
-	STA (RA)
-	PLA
-	+ipush
-	RTS
