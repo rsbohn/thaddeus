@@ -283,8 +283,6 @@ BC_MARK:	;; bytecode $09 10r09 MarkArguments
 
 
 BC_SEND: ;; A=message i(args)
-	JMP BCFAIL	;; not ready
-
 	PHA		;; save 'message'
 	LDA RCX
 	+ipush		;; i(context args)
@@ -309,7 +307,7 @@ BC_SEND: ;; A=message i(args)
 
 	;; messageSelector = RCC[message] -- zero based
 	PLY		;; retrieve 'message' from r()
-	LDA RCC,Y	;; messageSelector=literals[message]
+	LDA (RCC),Y	;; messageSelector=literals[message]
 	PHA		;; r(messageSelector)
 	+ipeek		;; args
 	STA RA
@@ -332,40 +330,41 @@ BC_SEND: ;; A=message i(args)
 	JSR GCALLOC	;; i(temps Array method args)
 	JSR SETCLASS	;; i(temps method args)
 
-	;; set stackTop in context
-	;; set bytePointer in context
-	;; clone the context:
-	+const $C00C	;; Context
-	+ipush
-	+const $0007	;; Context size
-	JSR GCALLOC
-	JSR SETCLASS
-	+ipop
-	STA RA
-
 	+const $0004+4	;; context[temporaries]
 	TAY
 	+ipop		;; A=temps i(method args)
-	STA (RA),Y
-
-	+const $000C+4	;; context[previousContext]
-	TAY
-	LDA RCX
-	STA (RA),Y
+	STA (RCX),Y
 
 	+const $0000+4	;; context[method]
 	TAY
 	+ipop		;; A=method i(args)
-	STA (RA),Y
+	STA (RCX),Y
 
 	+const $0002+4	;; context[args]
 	TAY
 	+ipop		;; A=args i()
-	STA (RA),Y
+	STA (RCX),Y
 
-	;; set the rest of the context elements
-	LDA RA
-	STA RCX
+
+	;; set stackTop in context
+	+const $000A+4
+	TAY
+	+const $0000
+	STA (RCX),Y
+
+	;; set bytePointer in context
+	+const $0008+4
+	TAY
+	+const $0000
+	STA (RCX),Y
+
+	;; set the stack in context
+	+const $0006
+	TAY
+	+const $0030	;; this should be elsewhere, 
+			;; or copy stack and stackTop from current context
+	STA (RCX),Y
+
 	+const PFPRETEXT
 	STA RPS
 	JMP BCNEXT2	;; allow break on SEND
