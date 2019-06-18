@@ -50,11 +50,13 @@ GCALLOC:	;; i(size -- addr) size is WORDS
 	STA RA
 	+ipop
 	STA (RA)	;; set the size
+	INC		;; size goes here
+	INC		;; *class goes here
+
 	ASL		;; *2 to allocate words
 	CLC
 	ADC PMEM
-	INC		;; *class goes here
-	INC
+
 	CMP M_TOP
 	BMI +
 	JMP MEM_EXHAUSTED

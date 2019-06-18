@@ -359,9 +359,9 @@ BC_SEND: ;; A=message i(args)
 	STA (RCX),Y
 
 	;; set the stack in context
-	+const $0006
+	+const $0006+4
 	TAY
-	+const $0030	;; this should be elsewhere, 
+	+const $0090	;; this should be elsewhere, 
 			;; or copy stack and stackTop from current context
 	STA (RCX),Y
 
