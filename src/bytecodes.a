@@ -42,13 +42,17 @@ BVMASK:
 	!word %0000000000001111
 RAMASK: !word $00FF
 
-	* = $F800
+	* = $F400
 BCDO:			;; take next bytecode
 			;; (bytecode nextbyte -- codeptr value)
-	+short		;; is this process runnable?
-	LDA #$01
+	+short
+	LDA #PFPRETEXT	;; is this a new context?
 	BIT $0C
-	BEQ BCNEXT
+	BNE PROCFILL
+
+	LDA #PFRUN	;; is this process runnable?
+	BIT $0C
+	BEQ BCNEXT	;; nope
 
 	+long
 	LDA (RW)
@@ -93,6 +97,40 @@ BCNEXT:
 BCNEXT2:		;; a more convenient breakpoint
 	BRA BCNEXT
 
+PROCFILL:
+	+long
+	+const $0000+4	;; context[method]
+	TAY
+	LDA (RCX),Y
+	STA RCM
+
+	+const $0002+4	;; context[args]
+	TAY
+	LDA (RCX),Y
+	STA RCA
+
+	+const $0004+4	;; context[temps]
+	TAY
+	LDA (RCX),Y
+	STA RCT
+
+	+const $0006+4	;; context[stack]
+	TAY
+	LDA (RCX),Y
+	STA RS
+
+	+const $0006+4	;; method[byteCodes]
+	TAY
+	LDA (RCM),Y
+	STA RA
+	+const $0004
+	CLC
+	ADC RA
+	STA RW
+
+	+const PFRUN
+	STA RPS
+	JMP BCNEXT	;; ready to run
 BC_EXTD:
 	;; can't happen
 	;; this is handled above
