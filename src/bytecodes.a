@@ -17,6 +17,7 @@
 	PFSLEEP = $00
 	PFRUN	= $01
 	PFPRETEXT = $02
+	PFTERMINAL= $08
 BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
@@ -417,6 +418,13 @@ BC_PRIMITIVE:	;; bytecode $0D 10r13 primitive
 BC0E:
 	JMP BCFAIL
 
+!macro cx_prev {
+	+const $000C+4	;; context[previousContext]
+	TAY
+	LDA (RCX),Y
+	STA RCX		;; back to previousContext
+}
+
 BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; action is based on value (A register)
 	STZ RA
@@ -424,8 +432,11 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	CMP RA
 	BNE +
 	;; self return
-	LDA [RIV]
+	+const $0000+4	;; receiverInArguments
+	TAY
+	LDA (RCA),Y
 	PHA
+	+cx_prev
 	JMP .RETURN
 +	INC RA	;; Special $02 StackReturn
 	CMP RA
@@ -433,6 +444,7 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; stack return
 	+ipop
 	PHA
+	+cx_prev
 	JMP .RETURN
 +	INC RA ;; Special $03 BlockReturn
 	CMP RA
@@ -441,7 +453,47 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	+ipop
 	PHA
 	;;;; return to creatingContext -> previousContext
+	+const $0002+4	;; block[creatingContext]
+	TAY
+	LDA (RCX),Y	;; in this case RCX is a block
+	STA RCX
+	+cx_prev	;; get prev of creatingContext
 	JMP .RETURN
+
+.RETURN:
+	;; RCX is now the previous context
+	;; if context == 0 || context == nilObject: allDone
+	BEQ .TERMINAL
+	CMP KNIL
+	BEQ .TERMINAL
+	;; if not:
+	;; push returnValue on istack
+	+const $000A+4	;; context[stackTop]
+	TAY
+	LDA (RCX),Y
+	STA RS
+	PLA
+	+ipush		;; i(returnValue)
+	;; set RCM from prevcx
+	+const $0000+4	;; context[method]
+	TAY
+	LDA (RCX),Y
+	STA RCM
+	;; restore RW from prevcx[bytePointer]
+	+const $0008+4	;; context[bytePointer] -- should be set in SEND
+	TAY
+	LDA (RCX),Y
+	STA RW
+	;; what about the other process vars?
+	JMP BCNEXT2
+
+.TERMINAL:
+	;; this process is done but there may be others.
+	;; maybe add code to remove PFTERMINAL processes from the loop.
+	+const PFTERMINAL
+	STA RPS
+	JMP BCNEXT2
+
 +	INC RA ;; Special $04 Duplicate
 	CMP RA
 	BNE +
@@ -506,11 +558,6 @@ ESP6:	+const $0006
 	BRK 
 	BRK
 	BRA BCFAIL
-
-
-.RETURN:
-	PLA
--	BRA -
 
 BCFAIL:
 	BRA BCFAIL

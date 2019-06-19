@@ -27,7 +27,11 @@ S_TOP:	!word PSYM-2
 
 FBIN:	!word $8000	;; marks memory object as binArray
 	
-	GLOBAL = $EF02
+	;; Constants
+	GLOBAL	= $EF02
+	KNIL	= $EFF0
+	KFALSE	= $EFF2
+	KTRUE	= $EFF4
 MSTART:
 	+long
 	LDA MZERO
