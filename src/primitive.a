@@ -25,7 +25,7 @@ PFIND:
 	BEQ .FOUND	;; final entry TRAP
 	STA RA
 	BRA -
-.FOUND	
+.FOUND
 	INC RW		;; skip the primitive number
 	LDA .CODE
 	CLC
@@ -109,7 +109,7 @@ P_NEWOBJ:
 	JSR GCALLOC	;; (size -- object)
 	JSR SETCLASS	;; (object class -- object)
 	JMP PRIMDONE
-	
+
 
 P_GETCH:
 	+next P_NEWOBJ
@@ -187,18 +187,36 @@ P_STRCLONE:
 	PHA	;; save the original
 	;; now we have r(string class)
 	STA RA
-	LDA (RA)
-	+ipush
+	LDA (RA)	;; get the size
 	TAY
-	;; alloc the new string
+	BMI +		;; is a bytestring
+			;; not a bytestring
+	+ipush
+	JSR GCALLOC	;; i(size -- addr)
+	TYA		;; copy n words
+	ASL
+	TAY
+	BRA .COPY
+
++	+const $8000	;; clear the byte flag
+	EOR (RA)
+	TAY
+	+ipush
 	JSR GCIALLOC ;; i(size -- addr)
 		;; i(clone) RA = clone RW = ipc r(string class)
-	+ipop
+.COPY:	+ipop
 	STA RA	;; i(--) RA = clone RW = ipc r(string class)
 	LDA RW
-	+ipush	
+	+ipush
 	PLA
 	STA RW	;; i(ipc) RA = clone RW = string  r(class)
+
+	;; add 4 byte header
+	;;INY ;; not this one
+	INY
+	INY
+	INY
+	SEP #$20	;; short A
 -	LDA (RW),Y
 	STA (RA),Y
 	DEY
@@ -206,17 +224,18 @@ P_STRCLONE:
 	LDA (RW)	;; copy final word
 	STA (RA)
 	;; now undo
+	REP #$20	;; long A
 	+ipop
 	STA RW
 	PLA ;; class
-	+ipush
+	+ipush		;; i(class)
 	LDA RA ;; clone
-	+ipush
+	+ipush		;; i(clone class)
 	JSR SETCLASS
 	JMP PRIMDONE
 
 P_BLIT:
-	+next P_STRATPUT
+	+next P_STRCLONE
 	+primitive $30 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
 	+long
 	+ipop
@@ -243,7 +262,7 @@ P_BLIT:
 	PLA
 	STA RW
 	JMP PRIMDONE
-	
+
 
 
 P_OBJCLONE:
@@ -290,7 +309,7 @@ P_KEYSTONE:
 	STA RIV+3	;; hold that
 	LDA #$00
 	TAY
-	
+
 -	STA (RCT)	;; set register address
 	LDA (RA),Y
 	STA (RCC)	;; set register value
