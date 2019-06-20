@@ -464,7 +464,8 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; RCX is now the previous context
 	;; if context == 0 || context == nilObject: allDone
 	BEQ .TERMINAL
-	CMP KNIL
+	+const KNIL
+	CMP RCX
 	BEQ .TERMINAL
 	;; if not:
 	;; push returnValue on istack
@@ -609,7 +610,6 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	JMP BCDO
 
 !zone bootsector {
-	.NIL = $EF02
 BOOTSECTOR:
 	!word $0007
 	!word $C00C	;; context
@@ -619,7 +619,7 @@ BOOTSECTOR:
 	!word $0080	;; stack in page zero
 	!word $0000	;; bytePointer
 	!word $0000	;; stackTop
-	!word .NIL	;; parent context
+	!word KNIL	;; parent context
 
 .METHOD:
 	!word $0007

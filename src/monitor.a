@@ -5,6 +5,7 @@
 	RA = $00
 	RW = $04
 	RS = $08
+	RV = $2C	;; video RAM (TEXT) [vlow][vhigh][vbank][column]
 
 	KCHAN = $1E
 
@@ -33,6 +34,11 @@ COLD:
 	JSR ICONSOLE
 	;JSR BOOTMSG
 	JSR VSTART
+	+long
+	+const $8000
+	STA RV
+	+const $0001
+	STA RV+2
 	JSL CGFILL
 
 	JSR MSTART
@@ -81,14 +87,16 @@ PRINTME:	;; print the embedded string
 	PLA
 	INC
 	STA RA
-	+short
--	LDA (RA)
+-	+short
+	LDA (RA)
 	BEQ +	;; done printing
 	JSR CHOUT
-	INC RA
+	INC RA	;; short mode 16 bit incr
+	BNE -
+	INC RA+1
 	BRA -
-+	LDA RA
-	+long
++	+long
+	LDA RA
 	PHA
 	RTS
 
@@ -141,10 +149,12 @@ CHIN:
 	RTS
 
 CHOUT:
-	+long
-	SEP #$20
-	STA $018000
-	+long
+	+short
+	PHY
+	LDY RV+3
+	STA [RV],Y
+	INC RV+3
+	PLY
 	RTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 VSTART:
