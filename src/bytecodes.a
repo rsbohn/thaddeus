@@ -1,5 +1,6 @@
 ;; Little Smalltalk bytecodes
 ;; from Budd 1983, Little Smalltak v4
+
 	!cpu 65816
 
 	;; RA scratch $00
@@ -18,7 +19,7 @@
 	PFRUN	= $01
 	PFPRETEXT = $02
 	PFTERMINAL= $08
-BCTAB:
+.BCTAB:
 	!word BC_EXTD		;; 00
 	!word BC_IVAR
 	!word BC_ARG
@@ -37,7 +38,7 @@ BCTAB:
 	!word BC_SPECIAL
 
 ;; current instruction is in RW $14
-BCMASK:
+.BCMASK:
 	!word %0000000011110000
 BVMASK:
 	!word %0000000000001111
@@ -53,11 +54,11 @@ BCDO:			;; take next bytecode
 
 	LDA #PFRUN	;; is this process runnable?
 	BIT $0C
-	BEQ BCNEXT	;; nope
+	BEQ .BCNEXT	;; nope
 
 	+long
 	LDA (RW)
-	AND BCMASK
+	AND .BCMASK
 	BNE +		;; is it EXTD?
 	LDA (RW)	;; bytecode is AL value is B
 	XBA
@@ -74,29 +75,29 @@ BCDO:			;; take next bytecode
 	PHA		;; push 4 bit 'value'
 
 	LDA (RW)
-	AND BCMASK	;; select bytecode
+	AND .BCMASK	;; select bytecode
 	LSR		;; // 8 produces the table offset
 	LSR
 	LSR
 
 .EXTD	TAX		;; code offset in A
-	LDA BCTAB,X
+	LDA .BCTAB,X
 	PHA		;; push codeptr
 	+incr RW	;; advance instruction pointer
 
-BCJUMP:
+.BCJUMP:
 	PLA
 	STA EV
 	PLA
 	JMP (EV)
 
-BCNEXT:
+.BCNEXT:
 	+long
 	LDA $0E		;; go to the next process
 	TCD
 	BRA BCDO
-BCNEXT2:		;; a more convenient breakpoint
-	BRA BCNEXT
+.BCNEXT2:		;; a more convenient breakpoint
+	BRA .BCNEXT
 
 PROCFILL:
 	+long
@@ -131,78 +132,75 @@ PROCFILL:
 
 	+const PFRUN
 	STA RPS
-	JMP BCNEXT	;; ready to run
-BC_EXTD:
-	;; can't happen
+	JMP .BCNEXT	;; ready to run
+BC_EXTD: ;; 0X shouldn't happen
 	;; this is handled above
 	BRA BC_EXTD
 
-BC_IVAR:
-	;; 1X push instance variable
+BC_IVAR: ;; 1X push instance variable
 	+cells
 	TAY
 	LDA [RIV],Y
 	+ipush
-	JMP BCNEXT
+	JMP .BCNEXT
 
-BC_ARG:
-	;; 2X push argument from context
+BC_ARG: ;; 2X push argument from context
 	+cells
 	TAY
 	LDA (RCA),Y
 	+ipush
-	JMP BCNEXT
-BC_TVAR:
-	;; 3X push temp variable from context
+	JMP .BCNEXT
+BC_TVAR: ;; 3X push temp variable from context
 	+cells
 	TAY
 	LDA (RCT)
 	+ipush
 	STA RA
 
-BC_LITERAL:
-	;; 4X push literal from 'interpreter'
+BC_LITERAL: ;; 4X push literal from 'interpreter'
 	;; literals from source code are kept apart from bytecode
 	+cells
 	TAY
 	LDA (RCC), Y
 	+ipush
-	JMP BCNEXT
+	JMP .BCNEXT
 
 ;;;;;;;;;;;;;;;;;;;;
-	O_TRUE	= $00F2
-	O_FALSE	= $00F0
-	O_NIL	= $00F4
-	O_SMALLTALK = $00F6
+	O_TRUE	= $EFF4
+	O_FALSE	= $EFF2
+	O_NIL	= $EFF0
+	O_SMALLTALK = $EF02
 	O_THISPROC = $00F8
-BC5TAB:
+.BC5TAB:
 	!word $0000, $0001, $0002, $0003
 	!word $0004, $0005, $0006, $0007
 	;; 8 9 -1 o_true
 	!word $0008, $0009, $FFFF, O_TRUE
 	;; o_false o_nil o_smalltalk o_thisproc
 	!word O_FALSE, O_NIL, O_SMALLTALK, O_THISPROC
-BC5MAX:
+.BC5MAX:
 	!word $0010
-BC5TABP:
-	!word BC5TAB
+.BC5TABP:
+	!word .BC5TAB
 ;;;;;;;;;;;;;;;;;;;;
 
-BC_CONSTANT:
-	CMP BC5MAX
+BC_CONSTANT: ;; 5X Push a special constant 0-9,-1,true,false,nil,smalltalk,thisproc
+	CMP .BC5MAX
 	BCC +
-	JMP BCFAIL	;; we don't handle >= $10 (yet)
-	;; map A to BCTAB
+	JMP .BCFAIL	;; we don't handle >= $10 (yet)
+	;; map A to .BCTAB
 +	+cells
 	CLC
-	ADC BC5TABP
+	ADC .BC5TABP
 	STA RA
 	LDA (RA)
 	+ipush
-	JMP BCNEXT
+	JMP .BCNEXT
 
 	.ARGS = $2E
-BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
+BC_PUSHBLOCK:		;; CX <addr> i(-- block) r(prevContext --)
+	;; need to get prevContext from RCX[prevContext]
+	;; I'm not putting it on the r-stack.
 	STA .ARGS	;; stash 'args location'
 	;;; push context to return stack (in case of garbage collection)
 	;;; ??? in case the current context moves but we keep the original???
@@ -273,24 +271,23 @@ BC_PUSHBLOCK:		;; C? <addr> i(-- block) r(prevContext --)
 
 	INC RW
 	INC RW
-	JMP BCNEXT
+	JMP .BCNEXT
 
-BCIVAR_:
-	;; pop, store in instance variable
+BCIVAR_: ;; 6X i-stack to instance variable [RIV]
 	+cells
 	TAY
 	+ipop
 	STA [RIV], Y
-	JMP BCNEXT
+	JMP .BCNEXT
 
-BCTVAR_:
+BCTVAR_: ;; 7X i-stack to temporary (RCT)
 	+cells
 	TAY
 	+ipop
 	STA (RCT), Y
-	JMP BCNEXT
+	JMP .BCNEXT
 
-BC_MARK:	;; bytecode $09 10r09 MarkArguments
+BC_MARK: ;; 8X MarkArguments (from i-stack to a new Array)
 	;; collect (low) arguments from stack into an array
 	+ipush		;; i(n ...)
 	PHA		;; r(n) i(n ...)
@@ -318,10 +315,10 @@ BC_MARK:	;; bytecode $09 10r09 MarkArguments
 	;; push arguments 
 	PLA
 	+ipush		;; i(args)
-	JMP BCNEXT
+	JMP .BCNEXT
 
 
-BC_SEND: ;; A=message i(args)
+BC_SEND: ;; 9X X=message i(args)
 	PHA		;; save 'message'
 	LDA RCX
 	+ipush		;; i(context args)
@@ -406,17 +403,17 @@ BC_SEND: ;; A=message i(args)
 
 	+const PFPRETEXT
 	STA RPS
-	JMP BCNEXT2	;; allow break on SEND
+	JMP .BCNEXT2	;; allow break on SEND
 
-BC_SEND1:
-BC_SEND2:
-	JMP BCFAIL
+BC_SEND1: ;; AX 
+BC_SEND2: ;; BX
+	JMP .BCFAIL
 
-BC_PRIMITIVE:	;; bytecode $0D 10r13 primitive
+BC_PRIMITIVE: ;; DX call a primitive function
 	JSR PRIMDO
-	JMP BCNEXT
-BC0E:
-	JMP BCFAIL
+	JMP .BCNEXT
+BC0E:	;; EX Not Used
+	JMP .BCFAIL
 
 !macro cx_prev {
 	+const $000C+4	;; context[previousContext]
@@ -425,7 +422,7 @@ BC0E:
 	STA RCX		;; back to previousContext
 }
 
-BC_SPECIAL:	;; bytecode $0F 10r15 special
+BC_SPECIAL: ;; FX special functions
 	;; action is based on value (A register)
 	STZ RA
 	INC RA	;; Special $01 SelfReturn
@@ -486,14 +483,14 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	LDA (RCX),Y
 	STA RW
 	;; what about the other process vars?
-	JMP BCNEXT2
+	JMP .BCNEXT2
 
 .TERMINAL:
 	;; this process is done but there may be others.
 	;; maybe add code to remove PFTERMINAL processes from the loop.
 	+const PFTERMINAL
 	STA RPS
-	JMP BCNEXT2
+	JMP .BCNEXT2
 
 +	INC RA ;; Special $04 Duplicate
 	CMP RA
@@ -501,14 +498,14 @@ BC_SPECIAL:	;; bytecode $0F 10r15 special
 	;; duplicate
 	+ipeek
 	+ipush
-	JMP BCNEXT
+	JMP .BCNEXT
 +	INC RA ;; Special $05 PopTop
 	CMP RA
 	BNE +
 	;; PopTop aka drop
 	DEC RS
 	DEC RS
-	JMP BCNEXT
+	JMP .BCNEXT
 
 +	INC RA ;; Special $06 Branch
 	CMP RA
@@ -525,7 +522,7 @@ ESP6:	+const $0006
 	;; A+i[0]
 	+iplusA
 	STA RW
-	JMP BCNEXT2
+	JMP .BCNEXT2
 
 +	INC RA	;; Special $07 BranchIfTrue
 	CMP RA
@@ -536,7 +533,7 @@ ESP6:	+const $0006
 	BNE .SKIP
 	LDA (RW)
 	STA RW
-	JMP BCNEXT
+	JMP .BCNEXT
 +	INC RA	;; Special $08 BranchIfFalse
 	CMP RA
 	BNE +
@@ -546,22 +543,22 @@ ESP6:	+const $0006
 	BNE .SKIP
 	LDA (RW)
 	STA RW
-	JMP BCNEXT
+	JMP .BCNEXT
 .SKIP:
 	;; do not branch -- skip the failed branch address
 	INC RW
 	INC RW
-	JMP BCNEXT
+	JMP .BCNEXT
 
 +	INC RA	;; Special $09 SendToSuper
 	INC RA	;; Special $0A Breakpoint
 	INC RA	;; OOPS
 	BRK 
 	BRK
-	BRA BCFAIL
+	BRA .BCFAIL
 
-BCFAIL:
-	BRA BCFAIL
+.BCFAIL:
+	BRA .BCFAIL
 
 MLOOKUP:
 	;; placeholder implementation
