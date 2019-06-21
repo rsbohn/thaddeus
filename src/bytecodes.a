@@ -121,13 +121,13 @@ PROCFILL:
 	LDA (RCX),Y
 	STA RS
 
-	+const $0006+4	;; method[byteCodes]
+	+const $0002+4	;; method[byteCodes]
 	TAY
 	LDA (RCM),Y
 	STA RA
 	+const $0004
 	CLC
-	ADC RA
+	ADC RA		;; add RA not (RA)
 	STA RW
 
 	+const PFRUN
@@ -340,6 +340,11 @@ BC_SEND: ;; 9X X=message i(args)
 	TAY
 	+ipeek
 	STA (RCX),Y
+	+const $0004	;; args->data
+	CLC
+	ADC (RCX),Y
+	STA RCC		;; switch to new args
+;;; make sure .RETURN restores this.
 
 	;; messageSelector = RCC[message] -- zero based
 	PLY		;; retrieve 'message' from r()
@@ -353,7 +358,7 @@ BC_SEND: ;; 9X X=message i(args)
 	;; method = lookupMethod(messageSelector, receiverClass)
 	+ipush
 	PLA
-	+ipush		;; i(messageSelector, receiverClass args)
+	+ipush		;; i(messageSelector receiverClass args)
 	JSR MLOOKUP	;; i(method args)
 	STA RA		;; copy of 'method' in RA
 
@@ -560,13 +565,27 @@ ESP6:	+const $0006
 .BCFAIL:
 	BRA .BCFAIL
 
-MLOOKUP:
+MLOOKUP:	;; i(selector receiver args -- method args)
+	;; selector can be an actual method
+	;; OR a symbol that we have to look up
 	;; placeholder implementation
 	+ipop
+	STA RCM
 	+ipop
-	+const $0030
+	STA RA
+
+	;; is it a Method?
+	+const $0002
+	TAY
+	+const $C00D
+	CMP (RCM),Y
+	BNE .SYMBOL
+	LDA RCM
 	+ipush
 	RTS
+.SYMBOL
+	;; trap: not implemented
+	BRA .SYMBOL
 
 C_ARRAY:	!word $C00A
 C_BYTES:	!word $C00B
@@ -574,51 +593,39 @@ C_CONTEXT:	!word $C00C
 C_METHOD:	!word $C00D
 BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+long
-	;; Do we have a context object at $1000?
-	+const $1000
+	+const $0080	;; start with the stack
+	STA RS
+	+const KNIL
+	+ipush		;; i(receiver)
 	STA RCX
+	;; Do we have a Method object at $1000?
+	+const $1000
+	STA RCM
 	+const $0002
 	TAY
-	LDA (RCX),Y	;; context[class]
-	CMP C_CONTEXT
+	+const $C00D	;; Method?
+	CMP (RCM),Y
 	BEQ +
-	;; context[method]
-	+const BOOTSECTOR
-	STA RCX
-+	+const $0004
-	TAY
-	LDA (RCX),Y	;; context[method]
+	+const BOOTMETHOD
 	STA RCM
-	;; method[byteCodes]
-	+const $0006
-	TAY
-	LDA (RCM),Y	;; method[byteCodes]
-	STA RA
-	;; go to byteCode zero (skip the 4 byte header)
-	+const $0004
-	CLC
-	ADC RA		;; byteCodes+4
+
++	LDA RCM
+	+ipush		;; i(selector receiver)
+
+	+const .ORIGIN
 	STA RW
-	;; get the stack address
-	+const $000A
-	TAY
-	LDA (RCX),Y	;; context[stackPointer]
-	STA RS
+	+const $0001
+	STA RPS
 	JMP BCDO
 
-!zone bootsector {
-BOOTSECTOR:
-	!word $0007
-	!word $C00C	;; context
-	!word .METHOD
-	!word .ARGS
-	!word $0040	;; temps -- put in RAM
-	!word $0080	;; stack in page zero
-	!word $0000	;; bytePointer
-	!word $0000	;; stackTop
-	!word KNIL	;; parent context
+.ORIGIN			;; first bytecodes to run
+	!hex 8292F100
+	;; BC_MARK(2) -- preloaded on i-stack above
+	;; BC_SEND
+	;; Return Self --> .TERMINAL
 
-.METHOD:
+!zone bootsector {
+BOOTMETHOD:
 	!word $0007
 	!word $C00D
 	!word .BOOT	;; method name
