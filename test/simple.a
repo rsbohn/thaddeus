@@ -14,15 +14,13 @@
 	!byte $D0, $13
 }
 
-;; placeholder constants
-;; these don't have to match anything
-	PCONTEXT = $C001
-	PMETHOD = $C002
-	PARRAY = $C003
-	PBYTEARRAY = $C004
-	PSTRING = $C005
+	PCONTEXT = $C00C
+	PMETHOD = $C00D
+	PARRAY = $C00A
+	PBYTEARRAY = $C00B
+	PSTRING = $C010
 
-	.NIL = $EF02
+	.NIL = $EFF0
 	* = $1000
 ;; a context
 	!word $0007
