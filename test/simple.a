@@ -22,17 +22,7 @@
 
 	.NIL = $EFF0
 	* = $1000
-;; a context
-	!word $0007
-	!word PCONTEXT
-	!word .METHOD
-	!word .ARGS
-	!word .TEMPS
-	!word $0080	;; stack
-	!word $0000	;; bytePointer
-	!word $0080	;; stack top
-	!word .NIL
-
+;; boot a method, not a context
 .METHOD:
 	!word $0007
 	!word PMETHOD
@@ -45,7 +35,8 @@
 	!word .SIMPLE		;; text (not really)
 
 .LITERALS:
-	!fill $10, $00		;; who knows?
+	!hex 5046		;; 'PF'
+	!fill $0e, $00		;; who knows?
 .TEMPS:
 	!fill $10, $00		;; room for temps
 	
@@ -61,8 +52,9 @@ T_IDENTITY:
 	+if_false .IDFF
 
 .IDFF:
-	; get RIV+8, P_PUTCH, P_DROP
-	!byte $14, $D1, $03, $F5
+	;; we passed
+	; get RCC[0], P_PUTCH, P_DROP
+	!byte $40, $D1, $03, $F5
 	; we're done - idle this process
 	!byte $50, $D1, $40
 	; so the interpreter keeps running
