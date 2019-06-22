@@ -121,6 +121,11 @@ PROCFILL:
 	LDA (RCX),Y
 	STA RS
 
+	+const $0004+4	;; method[literals] to RCC
+	TAY
+	LDA (RCM),Y
+	STA RCC
+
 	+const $0002+4	;; method[byteCodes]
 	TAY
 	LDA (RCM),Y
@@ -138,6 +143,8 @@ BC_EXTD: ;; 0X shouldn't happen
 	BRA BC_EXTD
 
 BC_IVAR: ;; 1X push instance variable
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
 	LDA [RIV],Y
@@ -145,20 +152,27 @@ BC_IVAR: ;; 1X push instance variable
 	JMP .BCNEXT
 
 BC_ARG: ;; 2X push argument from context
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
 	LDA (RCA),Y
 	+ipush
 	JMP .BCNEXT
+
 BC_TVAR: ;; 3X push temp variable from context
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
-	LDA (RCT)
+	LDA (RCT),Y
 	+ipush
-	STA RA
+	JMP .BCNEXT
 
 BC_LITERAL: ;; 4X push literal from 'interpreter'
 	;; literals from source code are kept apart from bytecode
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
 	LDA (RCC), Y
@@ -274,6 +288,8 @@ BC_PUSHBLOCK:		;; CX <addr> i(-- block) r(prevContext --)
 	JMP .BCNEXT
 
 BCIVAR_: ;; 6X i-stack to instance variable [RIV]
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
 	+ipop
@@ -281,6 +297,8 @@ BCIVAR_: ;; 6X i-stack to instance variable [RIV]
 	JMP .BCNEXT
 
 BCTVAR_: ;; 7X i-stack to temporary (RCT)
+	INC		;; skip the header
+	INC
 	+cells
 	TAY
 	+ipop
@@ -343,12 +361,12 @@ BC_SEND: ;; 9X X=message i(args)
 	+const $0004	;; args->data
 	CLC
 	ADC (RCX),Y
-	STA RCC		;; switch to new args
+	STA RCA		;; switch to new args
 ;;; make sure .RETURN restores this.
 
-	;; messageSelector = RCC[message] -- zero based
+	;; messageSelector = RCA[message] -- zero based
 	PLY		;; retrieve 'message' from r()
-	LDA (RCC),Y	;; messageSelector=literals[message]
+	LDA (RCA),Y	;; messageSelector=literals[message]
 	PHA		;; r(messageSelector)
 	+ipeek		;; args
 	STA RA
