@@ -38,9 +38,9 @@ PRIMDONE:
 	STA RCX
 	RTS
 
-	.TRUE = $F2
-	.FALSE = $F0
-	.NIL = $F4
+	.TRUE = $EFF4
+	.FALSE = $EFF2
+	.NIL = $EFF0
 
 .ID:	!word $0002
 .CODE:	!word $0004
@@ -65,10 +65,10 @@ P_IDENT:
 	+ipop
 	CMP RA
 	BNE +
-	LDA .TRUE
+	+const .TRUE
 	+ipush
 	JMP PRIMDONE
-+	LDA .FALSE
++	+const .FALSE
 	+ipush
 	JMP PRIMDONE
 
@@ -89,7 +89,7 @@ P_PUTCH:
 	+ipop
 	JSR CHOUT
 	+long
-	LDA .NIL	;; return nil
+	+const .NIL	;; return nil
 	+ipush
 	JMP PRIMDONE
 
@@ -268,25 +268,29 @@ P_BLIT:
 P_OBJCLONE:
 	+next P_BLIT
 	+primitive $31 ;; 10r49 OBJCLONE (src sbank dest dbank -- )
+	LDA RIV
+	PHA
 	+ipop
-	STA RCC
+	STA RIV
 	+ipop
-	STA RCC+2
+	STA RIV+2
 	+ipop
 	STA RA
 	+ipop
 	STA RA+2
-	LDA RCC+2	;; source data bank in A
+	LDA RIV+2	;; source data bank in A
 	+dbr_begin	;; set DBR
-	LDA (RCC)	;; get the size
+	LDA (RIV)	;; get the size
 	ASL
 	TAY
--	LDA (RCC),Y
+-	LDA (RIV),Y
 	STA [RA],Y
 	DEY
 	DEY
 	BNE -
 	+dbr_end	;; restore DBR
+	PLA
+	STA RIV
 	JMP PRIMDONE
 
 P_KEYSTONE:

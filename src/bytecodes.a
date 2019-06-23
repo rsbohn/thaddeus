@@ -83,8 +83,17 @@ BCDO:			;; take next bytecode
 .EXTD	TAX		;; code offset in A
 	LDA .BCTAB,X
 	PHA		;; push codeptr
+;;;;;;;;;;;;;;;;;;;;;
+.DEBUG:
+	LDA RW
+	JSR DBHEX
+	+long
+	LDA (RW)
+	JSR DBHEX
+	JSR DBNL
+	+long
+;;;;;;;;;;;;;;;;;;;;;
 	+incr RW	;; advance instruction pointer
-
 .BCJUMP:
 	PLA
 	STA EV
@@ -180,18 +189,15 @@ BC_LITERAL: ;; 4X push literal from 'interpreter'
 	JMP .BCNEXT
 
 ;;;;;;;;;;;;;;;;;;;;
-	O_TRUE	= $EFF4
-	O_FALSE	= $EFF2
-	O_NIL	= $EFF0
 	O_SMALLTALK = $EF02
 	O_THISPROC = $00F8
 .BC5TAB:
 	!word $0000, $0001, $0002, $0003
 	!word $0004, $0005, $0006, $0007
 	;; 8 9 -1 o_true
-	!word $0008, $0009, $FFFF, O_TRUE
+	!word $0008, $0009, $FFFF, KTRUE
 	;; o_false o_nil o_smalltalk o_thisproc
-	!word O_FALSE, O_NIL, O_SMALLTALK, O_THISPROC
+	!word KFALSE, KNIL, O_SMALLTALK, O_THISPROC
 .BC5MAX:
 	!word $0010
 .BC5TABP:
@@ -552,7 +558,7 @@ ESP6:	+const $0006
 	BNE +
 	;; branch if true
 	+ipop
-	CMP O_TRUE
+	CMP KTRUE
 	BNE .SKIP
 	LDA (RW)
 	STA RW
@@ -562,7 +568,7 @@ ESP6:	+const $0006
 	BNE +
 	;; branch if false
 	+ipop
-	CMP O_FALSE
+	CMP KFALSE
 	BNE .SKIP
 	LDA (RW)
 	STA RW
@@ -611,6 +617,13 @@ C_CONTEXT:	!word $C00C
 C_METHOD:	!word $C00D
 BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+long
+	+const KNIL	;; fix constants -- maybe should be in ROM?
+	STA KNIL
+	+const KFALSE
+	STA KFALSE
+	+const KTRUE
+	STA KTRUE
+
 	+const $0080	;; start with the stack
 	STA RS
 	+const KNIL

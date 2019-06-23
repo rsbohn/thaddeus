@@ -124,6 +124,39 @@ EIAOUT:
 	STA (KCHAN),Y
 	PLY
 	RTS
+DBHEX:
+	+long
+	PHA
+	XBA
+	JSR HEXO
+	+long
+	PLA
+	JSR HEXO
+	+short
+	LDA #$20
+	JMP EIAOUT
+HEXO:
+	+short
+	STA RA
+	LSR
+	LSR
+	LSR
+	LSR
+	JSR .HEX
+	LDA RA
+.HEX:	AND #$0F
+	CLC
+	ADC #$30
+	CMP #$3A
+	BCC +
+	ADC #$06
++	JSR EIAOUT
+	RTS
+DBNL:
+	+short
+	LDA NEWLINE
+	JSR EIAOUT
+	RTS
 CRLF:
 	+short
 	LDA NEWLINE
