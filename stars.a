@@ -1,5 +1,6 @@
 	!to "stars.bin", plain
 	* = $1000
+!zone useblit {
 	!word $0007		
 	!word $C00D		;; Method
 	!word $EFF0		;; name = nil
@@ -9,28 +10,55 @@
 	!word $0004		;; 4 temps
 	!word $EFF0		;; class = nil
 	!word $EFF0		;; text = nil
-.code:
-	!word $8038		;; hope so
-	!word $C00B		;; ByteArray
-.loop:
-	!hex 4270437144724573	;; reset temps
-	!hex 51305140D431	;; put row0..2
-	!hex 51315140D431
-	!hex 51325140D431
-	!hex 5A33D20A73		;; t3--
-	!hex 5033D201F7
-	!word .loop
-	!hex 5430D20A70		;; row0..2 += 4
-	!hex 5431D20A71
-	!hex 5432D20A72
-	!hex F60800
+.code	!word $8013
+	!word $C00B
+	!hex 4270		;; t0 := $8000
+	!hex 5D4540305185	;; mark args for SEND
+	;; #(nil putstr src dest destbank) MARK
+	!hex 92			;; putstr: string_a
+	!hex 5D4541305185
+	!hex 92			;; putstr: string_b
+	!hex F60200		;; loop
+.literals
+	!word $0006
+	!word $C00A
+	!word string_a	;; 40
+	!word string_b
+	!word $8000
+	!word $0050
+	!word $0008	;; 44
+	!word putstr
+}
 
-.literals:
-	!word $8006
-	!word $C00A		;; Array
-	!word $0000		;; 40
-	!word $0008		;; 41
-	!word $8000		;; 42 row0
-	!word $8050		;; 43 row1
-	!word $80A0		;; 44 row2
-	!word $0010		;; 45 times to loop before restart
+!zone putstr {
+;; args #(nil putstr src dest destbank)
+;; blit i(src sbank dest dbank count -- )
+putstr:	!word $0007
+	!word $C00D		;; Method
+	!word $EFF0		;; name
+	!word .code
+	!word $EFF0		;; literals = nil
+	!word $0010		;; stack size
+	!word $0000		;; temps
+	!word $EFF0		;; class = nil
+	!word $EFF0		;; text = nil
+.code:  !word $800D
+	!word $C00B		;; ByteArray
+	!hex 22D104		;; push src count
+	!hex 2423		;; push destbank dest
+	!hex 5022		;; push 0 bank, src
+	!hex 54D20A		;; skip header (add 4 to src)
+	!hex D530		;; blit
+	!hex F1			;; return self
+}
+
+string_a:
+	!word $8004
+	!word $C010		;; String
+	!raw "****"
+
+string_b:
+	!word $8004
+	!word $C010		;; String
+	!raw "===="
+
