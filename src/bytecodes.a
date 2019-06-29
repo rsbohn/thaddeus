@@ -49,11 +49,11 @@ BCDO:			;; take next bytecode
 			;; (bytecode nextbyte -- codeptr value)
 	+short
 	LDA #PFPRETEXT	;; is this a new context?
-	BIT $0C
+	BIT RPS
 	BNE PROCFILL
 
 	LDA #PFRUN	;; is this process runnable?
-	BIT $0C
+	BIT RPS
 	BEQ .BCNEXT	;; nope
 
 	+long
@@ -85,6 +85,9 @@ BCDO:			;; take next bytecode
 	PHA		;; push codeptr
 ;;;;;;;;;;;;;;;;;;;;;
 .DEBUG:
+;	+const $0100
+;	BIT RPS
+;	BEQ +		;; disabled
 	LDA RW
 	JSR DBHEX
 	+long
@@ -93,7 +96,7 @@ BCDO:			;; take next bytecode
 	JSR DBNL
 	+long
 ;;;;;;;;;;;;;;;;;;;;;
-	+incr RW	;; advance instruction pointer
++	+incr RW	;; advance instruction pointer
 .BCJUMP:
 	PLA
 	STA EV
@@ -311,8 +314,8 @@ BCTVAR_: ;; 7X i-stack to temporary (RCT)
 	STA (RCT), Y
 	JMP .BCNEXT
 
-BC_MARK: ;; 8X MarkArguments (from i-stack to a new Array)
-	;; collect (low) arguments from stack into an array
+BC_MARK: ;; 8n MarkArguments (from i-stack to a new Array)
+BC_MARK0:;; collect n arguments from stack into an array
 	+ipush		;; i(n ...)
 	PHA		;; r(n) i(n ...)
 	+const $C00A
@@ -388,7 +391,7 @@ BC_SEND: ;; 9X X=message i(args)
 
 	+const $C00A	;; Array
 	+ipush		;; i(Array method args)
-	+const $0004+4	;; method[tempSize]
+	+const $0008+4	;; method[tempSize]
 	TAY
 	LDA (RA),Y
 	+ipush		;; i(tempSize Array method args)
