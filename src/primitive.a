@@ -99,13 +99,15 @@ P_OSIZE:
 	+ipop
 	STA RA
 	LDA (RA)
-	+ipush
+	BPL +
+	+const $7FFF	;; byteArray -- adjust size
+	AND (RA)
++	+ipush
 	JMP PRIMDONE
 
 P_NEWOBJ:
 	+next P_OSIZE
-	+primitive $07 ;; new object allocation
-	;; i(size class -- object)
+	+primitive $07 ;; 10r07 new object allocation i(size class -- object)
 	JSR GCALLOC	;; (size -- object)
 	JSR SETCLASS	;; (object class -- object)
 	JMP PRIMDONE
@@ -133,8 +135,7 @@ P_PLUS:
 
 P_BYTESALLOT:
 	+next P_PLUS
-	+primitive $14 ;; byteArray alloc
-	;; (size class -- addr)
+	+primitive $14 ;; 10r20 byteArray alloc i(size class -- addr)
 	JSR GCIALLOC
 	JSR SETCLASS
 	JMP PRIMDONE
@@ -180,7 +181,7 @@ P_STRATPUT:
 
 P_STRCLONE:
 	+next P_STRATPUT
-	+primitive $17 ;; string clone 10r23 (class string -- clone)
+	+primitive $17 ;; 10r23 string clone (class string -- clone)
 	+ipop
 	PHA	;; save the class
 	+ipop
