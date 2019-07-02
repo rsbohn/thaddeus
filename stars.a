@@ -1,6 +1,32 @@
 	!to "stars.bin", plain
 	* = $1000
-!zone useblit {
+!zone inline {
+	!word $0007
+	!word $C00D		;; Method
+	!word string_b		;; name
+	!word .code
+	!word .literals
+	!word $0010		;; stack size
+	!word $0004		;; 4 temps
+	!word $EFF0		;; class = nil
+	!word $EFF0		;; text = nil
+
+.code:
+	!word $800D
+	!word $C00B
+	!hex 5451415040D530	;; blit
+	!hex 50D140		;; halt
+	!hex F60000		;; repeat forever
+	!align 1,0
+.literals:
+	!word $0002
+	!word $C00A
+	!word string_a
+	!word $8000
+}
+	
+!zone sending {
+sending:
 	!word $0007		
 	!word $C00D		;; Method
 	!word $EFF0		;; name = nil
@@ -19,6 +45,7 @@
 	!hex 5D4541305185
 	!hex 92			;; putstr: string_b
 	!hex F60200		;; loop
+	!align 1,0
 .literals
 	!word $0006
 	!word $C00A
@@ -50,6 +77,7 @@ putstr:	!word $0007
 	!hex 54D20A		;; skip header (add 4 to src)
 	!hex D530		;; blit
 	!hex F1			;; return self
+	!align 1,0
 }
 
 string_a:
