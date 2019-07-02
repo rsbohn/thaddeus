@@ -356,6 +356,11 @@ BC_SEND: ;; 9X X=message i(args)
 	JSR GCALLOC
 	JSR SETCLASS	;; i(newContext context args)
 
+	+const $0008+4	;; context[bytePointer]
+	TAY
+	LDA RW		;; save bytePointer for return
+	STA (RCX),Y
+
 	+ipop		;; i(context args)
 	STA RCX		;; RCX is now the new context!
 	+const $000C+4	;; context[previousContext]
@@ -490,6 +495,7 @@ BC_SPECIAL: ;; FX special functions
 	JMP .RETURN
 
 .RETURN:
+S01:
 	;; RCX is now the previous context
 	;; if context == 0 || context == nilObject: allDone
 	BEQ .TERMINAL
@@ -498,7 +504,7 @@ BC_SPECIAL: ;; FX special functions
 	BEQ .TERMINAL
 	;; if not:
 	;; push returnValue on istack
-	+const $000A+4	;; context[stackTop]
+	+const $0006+4	;; context[stack]
 	TAY
 	LDA (RCX),Y
 	STA RS
