@@ -74,7 +74,7 @@ P_IDENT:
 
 P_OCLASS:
 	+next P_IDENT
-	+primitive $02 ;; get class of object
+	+primitive $02 ;; 10r02 get class of object i(object -- class)
 	+ipop
 	STA RA
 	+const $0002	;; object is [size] [class] [stuff...]

@@ -134,7 +134,7 @@ DBHEX:
 	JSR HEXO
 	+short
 	LDA #$20
-	JMP EIAOUT
+	JMP CHOUT
 HEXO:
 	+short
 	STA RA
@@ -150,12 +150,12 @@ HEXO:
 	CMP #$3A
 	BCC +
 	ADC #$06
-+	JSR EIAOUT
++	JSR CHOUT
 	RTS
 DBNL:
 	+short
 	LDA NEWLINE
-	JSR EIAOUT
+	JSR CHOUT
 	RTS
 CRLF:
 	+short

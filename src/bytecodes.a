@@ -88,6 +88,8 @@ BCDO:			;; take next bytecode
 ;	+const $0100
 ;	BIT RPS
 ;	BEQ +		;; disabled
+	+const $4701	;; right-ish
+	STA RV+2
 	LDA RW
 	JSR DBHEX
 	+long
@@ -101,7 +103,7 @@ BCDO:			;; take next bytecode
 	PLA
 	STA EV
 	PLA
-	JMP (EV)
+DISP:	JMP (EV)
 
 .BCNEXT:
 	+long
@@ -521,6 +523,24 @@ S01:
 	LDA (RCX),Y
 	STA RW
 	;; what about the other process vars?
+
+	+const $0002+4	;; context[args]
+	TAY
+	LDA (RCX), Y
+	STA RCA
+
+	+const $0004+4	;; context[temps]
+	TAY
+	LDA (RCX), Y
+	STA RCT
+
+	;; $0006 context[stack] is already set
+
+	+const $0004+4	;; method[literals]
+	TAY
+	LDA (RCM),Y
+	STA RCC
+
 	JMP .BCNEXT2
 
 .TERMINAL:
