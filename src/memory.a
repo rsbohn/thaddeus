@@ -49,6 +49,27 @@ MEM_EXHAUSTED:
 	!raw "Out of memory.", $00
 -	BRA -
 
+CXALLOC:	;; i(size -- addr) size is 8 WORDS
+	LDA S_TOP
+	BRA +
+.AGAIN	LDA RA
++	SEC
+	SBC+2 #$0012
+	CMP SZERO
+	BPL +
+	JMP MEM_EXHAUSTED
++	STA RA
+	+const $0002
+	TAY
+	LDA (RA),Y
+	BNE .AGAIN
+	;; found an available block
+	+ipop
+	STA (RA)
+	LDA RA
+	+ipush
+	RTS
+
 GCALLOC:	;; i(size -- addr) size is WORDS
 	LDA PMEM
 	STA RA

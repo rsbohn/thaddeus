@@ -355,7 +355,7 @@ BC_SEND: ;; 9X X=message i(args)
 	+ipush		;; i(Context context args)
 	+const $0007
 	+ipush		;; i(size Context context args)
-	JSR GCALLOC
+	JSR CXALLOC	;; find or allocate free Context
 	JSR SETCLASS	;; i(newContext context args)
 
 	+const $0008+4	;; context[bytePointer]
@@ -455,6 +455,10 @@ BC0E:	;; EX Not Used
 	JMP .BCFAIL
 
 !macro cx_prev {
+	+const $0002	;; context[class]
+	TAY
+	+const $0000	;; free!
+	STA (RCX),Y
 	+const $000C+4	;; context[previousContext]
 	TAY
 	LDA (RCX),Y
@@ -505,7 +509,7 @@ S01:
 	CMP RCX
 	BEQ .TERMINAL
 	;; if not:
-	;; push returnValue on istack
+	;; push returnValue on prevcx[stack]
 	+const $0006+4	;; context[stack]
 	TAY
 	LDA (RCX),Y
