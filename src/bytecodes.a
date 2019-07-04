@@ -401,11 +401,20 @@ BC_SEND: ;; 9X X=message i(args)
 	+const $0008+4	;; method[tempSize]
 	TAY
 	LDA (RA),Y
+	BEQ .T0		;; Don't allocate a size zero Array.
+			;; maybe that should be in GCALLOC...
 	+ipush		;; i(tempSize Array method args)
 	JSR GCALLOC	;; i(temps Array method args)
 	JSR SETCLASS	;; i(temps method args)
+	BRA +
 
-	+const $0004+4	;; context[temporaries]
+	;; Sometimes I wish i_TOS were in a register...
+
+.T0	+ipop		;; if tempSize==0
+	+const KNIL	;; context[temporaries]=KNIL
+	+ipush		;; i(KNIL method args)
+
++	+const $0004+4	;; context[temporaries]
 	TAY
 	+ipop		;; A=temps i(method args)
 	STA (RCX),Y
