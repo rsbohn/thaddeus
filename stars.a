@@ -19,10 +19,11 @@
 	!hex F60000		;; repeat forever
 	!align 1,0
 .literals:
-	!word $0002
+	!word $0003
 	!word $C00A
 	!word string_a
 	!word $8000
+	!word sending		;; next method
 }
 	
 !zone sending {
