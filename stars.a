@@ -1,31 +1,5 @@
 	!to "stars.bin", plain
 	* = $1000
-!zone inline {
-	!word $0007
-	!word $C00D		;; Method
-	!word string_b		;; name
-	!word .code
-	!word .literals
-	!word $0010		;; stack size
-	!word $0004		;; 4 temps
-	!word $EFF0		;; class = nil
-	!word $EFF0		;; text = nil
-
-.code:
-	!word $800D
-	!word $C00B
-	!hex 5451415040D530	;; blit
-	!hex 50D140		;; halt
-	!hex F60000		;; repeat forever
-	!align 1,0
-.literals:
-	!word $0003
-	!word $C00A
-	!word string_a
-	!word $8000
-	!word sending		;; next method
-}
-	
 !zone sending {
 sending:
 	!word $0007		
@@ -42,10 +16,12 @@ sending:
 	!hex 4270		;; t0 := $8000
 	!hex 5D4540305185	;; mark args for SEND
 	;; #(nil putstr src dest destbank) MARK
-	!hex 92			;; putstr: string_a
+	!hex 72			;; save in t2
 	!hex 5D4541305185
-	!hex 92			;; putstr: string_b
-	!hex F60200		;; loop
+	!hex 73			;; save in t3
+	!hex 3292		;; putstr: string_a
+	!hex 3392		;; putstr: string_b
+	!hex F61000		;; loop
 	!align 1,0
 .literals
 	!word $0006
