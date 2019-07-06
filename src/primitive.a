@@ -294,17 +294,16 @@ P_OBJCLONE:
 	STA RIV
 	JMP PRIMDONE
 
+	KA = RA+2
 P_KEYSTONE:
 	+next P_OBJCLONE
 	+primitive $32 ;; 10r50 KEYSTONE (dest bytes -- ) D2 32
-	+ipop
-	STA RCT
-	INC
-	STA RCC
+	+ipop		;; i(bytes)
+	STA KA		;; dest address (register)
 	+ipop
 	STA RA
 	LDA (RA)
-	BPL .nope
+	BPL .nope	;; must by a byte array
 	INC RA		;; skip to the data
 	INC RA
 	INC RA
@@ -315,9 +314,11 @@ P_KEYSTONE:
 	LDA #$00
 	TAY
 
--	STA (RCT)	;; set register address
+-	STA (KA)	;; set register address
 	LDA (RA),Y
-	STA (RCC)	;; set register value
+	INC KA
+	STA (KA)	;; set register value
+	DEC KA
 	INY
 	TYA
 	CMP RIV+3
