@@ -445,8 +445,11 @@ BC_SEND: ;; 9X X=message i(args)
 	;; set the stack in context
 	+const $0006+4
 	TAY
-	+const $0090	;; this should be elsewhere, 
-			;; or copy stack and stackTop from current context
+	PHD		;; get the current direct page address
+	PLA
+	STA RA
+	+const $0090	;; this is the stack in the current process
+	ORA RA
 	STA (RCX),Y
 
 	+const PFPRETEXT
@@ -602,7 +605,15 @@ ESP6:	+const $0006
 	+ipop
 	CMP KTRUE
 	BNE .SKIP
+ET:	+const $0006
+	TAY
+	LDA (RCM),Y	;; method[byteCodes]
+	+ipush
+	+const $0004
+	+iplusA
+	+ipush
 	LDA (RW)
+	+iplusA
 	STA RW
 	JMP .BCNEXT
 +	INC RA	;; Special $08 BranchIfFalse
@@ -612,7 +623,15 @@ ESP6:	+const $0006
 	+ipop
 	CMP KFALSE
 	BNE .SKIP
+EF:	+const $0006
+	TAY
+	LDA (RCM),Y	;; method[byteCodes]
+	+ipush
+	+const $0004
+	+iplusA
+	+ipush
 	LDA (RW)
+	+iplusA
 	STA RW
 	JMP .BCNEXT
 .SKIP:
