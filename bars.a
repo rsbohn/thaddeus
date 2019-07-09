@@ -1,0 +1,187 @@
+	!to "bars.bin", plain
+	* = $1000
+!zone sending {
+sending:
+	!word $0007		
+	!word $C00D		;; Method
+	!word $EFF0		;; name = nil
+	!word .code
+	!word .literals
+	!word $0010		;; stack size
+	!word $0004		;; 4 temps
+	!word $EFF0		;; class = nil
+	!word $EFF0		;; text = nil
+.code	!word $8013
+	!word $C00B
+	!hex 4270		;; t0 := $8000
+	!hex 5D4540305185	;; mark args for SEND
+	;; #(nil putstr src dest destbank) MARK
+	!hex 72			;; save in t2
+	!hex 5D4541305185
+	!hex 73			;; save in t3
+	!hex 3292		;; putstr: string_a
+	!hex 3392		;; putstr: string_b
+	!hex F61000		;; loop
+	!align 1,0
+.literals
+	!word $0006
+	!word $C00A
+	!word string_a	;; 40
+	!word string_b
+	!word $8000
+	!word $0050
+	!word $0008	;; 44
+	!word putstr
+}
+
+!zone putstr {
+;; args #(nil putstr src dest destbank)
+;; blit i(src sbank dest dbank count -- )
+putstr:	!word $0007
+	!word $C00D		;; Method
+	!word $EFF0		;; name
+	!word .code
+	!word $EFF0		;; literals = nil
+	!word $0010		;; stack size
+	!word $0000		;; temps
+	!word $EFF0		;; class = nil
+	!word $EFF0		;; text = nil
+.code:  !word $800D
+	!word $C00B		;; ByteArray
+	!hex 22D104		;; push src count
+	!hex 2423		;; push destbank dest
+	!hex 5022		;; push 0 bank, src
+	!hex 54D20A		;; skip header (add 4 to src)
+	!hex D530		;; blit
+	!hex F1			;; return self
+	!align 1,0
+}
+
+string_a:
+	!word $8004
+	!word $C010		;; String
+	!raw "****"
+
+string_b:
+	!word $8004
+	!word $C010		;; String
+	!raw "===="
+
+!zone blips {
+blips:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Prototype
+	!word $EFF0
+.code
+	!word $8007
+	!word $C00B
+	!hex 4140D232		;; keystone
+	!hex 4392		;; idle
+	!hex 4240D232		;; keystone
+	!hex 4392		;; idle
+	!hex F60000		;; repeat forever
+	!align 1,0
+.literals
+	!word $0002
+	!word $C00A
+	!word AY8910_0
+	!word NOTE0
+	!word NOTE1
+	!word TICK
+.name
+	!word $8005
+	!word $8010
+	!raw "blips"
+	!align 1,0
+}
+	AY8910_0 = $0850
+NOTE0:
+	!word $8010
+	!word $C00B
+	!hex 00 0C 01 0C 00 08
+	!hex 00 38
+	!hex 13 13 13
+	!hex 00 23
+	!hex 01
+	!hex FF FF
+	!align 1,0
+NOTE1:
+	!word $8010
+	!word $C00B
+	!hex 00 0A 01 0A 00 06
+	!hex 00 38
+	!hex 13 13 13
+	!hex 00 23
+	!hex 01
+	!hex FF FF
+	!align 1,0
+TICK:
+	!word $0003
+	!word $C00A
+	!word Prototype
+	!word ticker
+	!word $00A0
+
+!zone prototype {
+Prototype:
+	!word $0005
+	!word $C000
+	!word .name
+	!word Prototype		;; parentClass
+	!word .methods
+	!word $0100		;; size ??
+	!word $EFF0		;; variables
+.name
+	!word $8009
+	!word $C010
+	!raw "Prototype"
+	!align 1,0
+.methods
+	!word $0003
+	!word $C00A
+	!word Prototype		;; not a method but...can use this as args
+	!word blips
+	!word ticker
+}
+
+	* = $1110
+!zone tickerz {
+ticker:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Prototype
+	!word $EFF0
+.name
+	!word $8006
+	!word $C010
+	!raw "ticker"
+	!align 1,0
+.literals
+	!word $0004
+	!word $C00A
+	!word $FFFF
+	!word $0000
+	!word $0000
+	!word $0000
+.code
+	!word $8030
+	!word $C00B
+	!hex 22			;; get arg[2]
+	!hex 40D20A		;; decrement
+	!hex F4			;; dup
+	!hex 50D201		;; is it zero?
+	!hex F80100		;; if false: loop
+	!hex F1			;; if true: return
+	
+}
