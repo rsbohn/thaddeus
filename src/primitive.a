@@ -142,8 +142,7 @@ P_BYTESALLOT:
 
 P_STRAT:
 	+next P_BYTESALLOT
-	+primitive $15 ;; string at:
-	;; (point addr -- value)
+	+primitive $15 ;; string at: (point addr -- value)
 	+ipop
 	DEC ;because yeah arrays start a 1
 	INC ; skip 4 byte header
@@ -160,8 +159,7 @@ P_STRAT:
 
 P_STRATPUT:
 	+next P_STRAT
-	+primitive $16 ;; string at:put:
-	;; (point addr value -- addr)
+	+primitive $16 ;; string at:put: (point addr value -- addr)
 	+ipop
 	DEC ; see previous
 	INC ; skip 4 byte header

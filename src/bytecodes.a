@@ -380,9 +380,13 @@ BC_SEND: ;; 9X X=message i(args)
 	STA RCA		;; switch to new args
 ;;; make sure .RETURN restores this.
 
-	;; messageSelector = RCA[message] -- zero based
-	PLY		;; retrieve 'message' from r()
-	LDA (RCA),Y	;; messageSelector=literals[message]
+	;; messageSelector = RCC[message] -- zero based
+	PLA		;; retrieve 'message' from r()
+	INC
+	INC
+	ASL
+	TAY
+	LDA (RCC),Y	;; messageSelector=literals[message]
 	PHA		;; r(messageSelector)
 	+ipeek		;; args
 	STA RA
@@ -690,6 +694,11 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+const KNIL
 	+ipush		;; i(receiver)
 	STA RCX
+	+const .OLIT
+	STA RCC		;; boot literals
+	+const $0001
+	STA RPS		;; proc status RUN
+
 	;; Do we have a Method object at $1000?
 	+const $1000
 	STA RCM
@@ -697,24 +706,20 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	TAY
 	+const $C00D	;; Method?
 	CMP (RCM),Y
-	BEQ +
-	+const BOOTMETHOD
-	STA RCM
+	BNE .BOOTROM
 
-+	LDA RCM
-	+ipush		;; i(selector receiver)
+	+const $0001	;; KNIL (method at $1000)
+	JMP BC_SEND
 
-	+const .ORIGIN
-	STA RW
-	+const $0001
-	STA RPS
-	JMP BCDO
+.BOOTROM
+	+const $0000	;; KNIL (method at BOOTMETHOD)
+	JMP BC_SEND
 
-.ORIGIN			;; first bytecodes to run
-	!hex 8292F100
-	;; BC_MARK(2) -- preloaded on i-stack above
-	;; BC_SEND
-	;; Return Self --> .TERMINAL
+.OLIT			;; first literals
+	!word $0002
+	!word $C00A
+	!word BOOTMETHOD
+	!word $1000
 
 !zone bootsector {
 BOOTMETHOD:
@@ -734,10 +739,21 @@ BOOTMETHOD:
 .BCODE:
 	!word $0006
 	!word $C00B		;; ByteArray
+	!hex 50			;; dest bank 0
+	!hex 4052D207		;; new array
+	!hex F470		;; save in t0
+	!hex 5141		;; dbank, src, sbank
+	!hex D431		;; objclone (src bank dest bank)
+	;; set up for the blit
+	!hex 3051D215		;; i(count)
 	!byte $50, $D1, $40	;; idle
 	!byte $F6, $00, $00	;; repeat
 .LITERALS:
-	!fill $10, $00
+	!word $0003
+	!word $C00A
+	!word $C00A
+	!word $0080
+	!word $1000
 .ARGS:
 	!word $0003
 	!word $C00A	;; Array
