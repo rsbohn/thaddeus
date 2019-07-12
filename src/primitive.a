@@ -233,8 +233,22 @@ P_STRCLONE:
 	JSR SETCLASS
 	JMP PRIMDONE
 
-P_BLIT:
+P_ARAT:
 	+next P_STRCLONE
+	;; <10r24 self index> but the args are on stack right to left
+	+primitive $18 ;; 10r24 Array at: $D2 $18 i(index self -- value)
+	+ipop		;; index (starts at 1)
+	INC		;; skip class in header
+	ASL		;; word address
+	TAY
+	+ipop		;; self
+	STA RA
+	LDA (RA),Y
+	+ipush
+	JMP PRIMDONE
+
+P_BLIT:
+	+next P_ARAT
 	+primitive $30 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
 	+long
 	+ipop

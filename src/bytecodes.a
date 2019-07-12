@@ -745,7 +745,11 @@ BOOTMETHOD:
 	!hex 5141		;; dbank, src, sbank
 	!hex D431		;; objclone (src bank dest bank)
 	;; set up for the blit
-	!hex 3051D215		;; i(count)
+	!hex 3052D218		;; i(count)
+	!hex 50	42		;; i(dest dbank count)
+	!hex 51 3051D218	;; i(src sbank dest dbank count)
+	!hex D530		;; blit nvram to $001000
+	!hex 4392		;; boot copied code
 	!byte $50, $D1, $40	;; idle
 	!byte $F6, $00, $00	;; repeat
 .LITERALS:
@@ -754,10 +758,11 @@ BOOTMETHOD:
 	!word $C00A
 	!word $0080
 	!word $1000
+	!word .ARGS
 .ARGS:
 	!word $0003
 	!word $C00A	;; Array
-	!word $0000
+	!word $EFF0
 	!word $0001
 	!word $0002
 }
