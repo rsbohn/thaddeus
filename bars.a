@@ -83,18 +83,19 @@ blips:
 	!word $8007
 	!word $C00B
 	!hex 4140D232		;; keystone
-	!hex 4392		;; idle
+	!hex 4394		;; idle
 	!hex 4240D232		;; keystone
-	!hex 4392		;; idle
+	!hex 4394		;; idle
 	!hex F60000		;; repeat forever
 	!align 1,0
 .literals
-	!word $0002
+	!word $0005
 	!word $C00A
 	!word AY8910_0
 	!word NOTE0
 	!word NOTE1
 	!word TICK
+	!word ticker
 .name
 	!word $8005
 	!word $8010
