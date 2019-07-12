@@ -14,14 +14,14 @@ sending:
 .code	!word $8013
 	!word $C00B
 	!hex 4270		;; t0 := $8000
-	!hex 5D4540305185	;; mark args for SEND
-	;; #(nil putstr src dest destbank) MARK
+	!hex 5D40305184		;; mark args for SEND
+	;; #(nil src dest destbank) MARK
 	!hex 72			;; save in t2
-	!hex 5D4541305185
+	!hex 5D41305184
 	!hex 73			;; save in t3
-	!hex 3292		;; putstr: string_a
-	!hex 3392		;; putstr: string_b
-	!hex F61000		;; loop
+	!hex 3295		;; putstr: string_a
+	!hex 3395		;; putstr: string_b
+	!hex F60E00		;; loop
 	!align 1,0
 .literals
 	!word $0006
@@ -35,7 +35,8 @@ sending:
 }
 
 !zone putstr {
-;; args #(nil putstr src dest destbank)
+;;        20  21  22   23
+;; args #(nil src dest destbank)
 ;; blit i(src sbank dest dbank count -- )
 putstr:	!word $0007
 	!word $C00D		;; Method
@@ -48,9 +49,9 @@ putstr:	!word $0007
 	!word $EFF0		;; text = nil
 .code:  !word $800D
 	!word $C00B		;; ByteArray
-	!hex 22D104		;; push src count
-	!hex 2423		;; push destbank dest
-	!hex 5022		;; push 0 bank, src
+	!hex 21D104		;; count
+	!hex 2322		;; dbank dest
+	!hex 5021		;; push 0 bank, src
 	!hex 54D20A		;; skip header (add 4 to src)
 	!hex D530		;; blit
 	!hex F1			;; return self
