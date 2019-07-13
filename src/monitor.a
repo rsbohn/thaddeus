@@ -17,7 +17,7 @@
 	NVECT	= $FFE8
 	EVECT	= $FFFA
 	VRAM	= $8000		;; in databank $01
-	CGFILL	= $012000	;; fill chargen
+	CGFILL	= $017000	;; fill chargen
 
 	!source "src/macros.a"
 	

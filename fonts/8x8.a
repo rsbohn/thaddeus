@@ -10,7 +10,7 @@
 }
 
 	CHARGEN = $9000
-	* = $2000
+	* = $7000
 CGFILL:
 	+long
 	PHB		;; preserve the databank
