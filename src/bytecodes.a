@@ -135,6 +135,11 @@ PROCFILL:
 	LDA (RCX),Y
 	STA RS
 
+	+const $0000+4	;; args[receiver]
+	TAY
+	LDA (RCA),Y
+	STA RIV
+
 	+const $0004+4	;; method[literals] to RCC
 	TAY
 	LDA (RCM),Y
