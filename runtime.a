@@ -1,0 +1,127 @@
+;; Thaddeus Runtime
+;; A Little Smalltalk system
+;; Copyright (c) Randall Bohn 2019
+;; 2019 0713
+;; MIT License: see LICENCE for terms 
+
+	!to "runtime.bin", plain
+;; $ acme runtime.a
+
+	* = $1000
+	Nil = $EFF0
+
+bootArray:
+	!word FIN-$1000		;; size
+	!word $C00A		;; Array
+	!word Runtime
+	!word rtBoot
+!zone rtboot {
+rtBoot:
+	!word $0007		;; size
+	!word $C00D		;; Method
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010		;; stack size
+	!word $0008		;; 8 temps
+	!word Runtime		;; class
+	!word Nil		;; text
+.name
+	!word $8006
+	!word $C010		;; String
+	!raw "rtboot"
+.code
+	!word $8020
+	!word $C00B		;; BinaryArray
+	!hex 4190F5		;; Identify
+	!hex 50			;; put 0 on stack
+	!hex 51D20A		;; increment on stack
+	!hex F4F5
+	!hex F1
+	!align 1,0
+.literals
+	!word $0004
+	!word $C00A		;; Array
+	!word putString
+	!word .psargs
+	!word $0000
+	!word $0000
+.psargs
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word pztag
+	!word $0000
+}
+
+!zone runtime {
+Runtime:
+	!word $0005
+	!word $C000		;; Class
+	!word .name
+	!word Runtime		;; parent is Runtime
+	!word .methods
+	!word $0010		;; size
+	!word .variables
+.name
+	!word $8009
+	!word $C010
+	!raw "Runtime"
+	!align 1,0
+.methods
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word rtBoot
+	!word putString
+.variables
+	!word $0003
+	!word $C00A
+	!word rtStrings
+	!word Nil
+	!word Nil
+}
+
+!zone putString {
+putString:			;; [runtime string offset] print string at screen[offset]
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010	;stackSize
+	!word $0000	;tempSize
+	!word Runtime
+	!word Nil	;no text
+.name
+	!word $8009
+	!word $C010
+	!raw "putString"
+	!align 1,0
+.literals
+	!word $0001
+	!word $C00A
+	!word $8000	;screen initial offset
+.code
+	!word $8010
+	!word $C00B
+	!hex 21D10451	;i(dbank count)
+	!hex 4022D20A	;add offset to screen base i(dest dbank count)
+	!hex 50		;i(sbank dest dbank count)
+	!hex 2153D20A	;string[data] i(src sbank dest dbank count)
+	!hex D530	;blit i()
+	!hex F1		;return self
+	!align 1,0
+}
+
+pztag:
+	!word $0020
+	!word $C010
+	!raw "Pluton/0 65816 Computer  "
+rtStrings:
+	!word $0002
+	!word $C00A
+	!word Nil
+	!word Nil
+
+FIN:	!word $FFFF

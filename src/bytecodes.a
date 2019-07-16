@@ -697,77 +697,40 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	+const $0080	;; start with the stack
 	STA RS
 	+const KNIL
-	+ipush		;; i(receiver)
 	STA RCX
-	+const .OLIT
-	STA RCC		;; boot literals
 	+const $0001
 	STA RPS		;; proc status RUN
 
-	;; Do we have a Method object at $1000?
+	;; Do we have an app at $1000?
 	+const $1000
-	STA RCM
+	STA RCC
 	+const $0002
 	TAY
-	+const $C00D	;; Method?
-	CMP (RCM),Y
-	BNE .BOOTROM
+	+const $C00A	;; Array?
+	CMP (RCC),Y
+	BEQ LAUNCH
 
-	+const $0001	;; KNIL (method at $1000)
+.BOOTROM		;; If not load from NVRAM
+	+const $0080
+	STA RIV
+	+const $0004
+	TAY
+	+const $0001
+	STA RIV+2
+	LDA [RIV],Y
+	STA RIV		;; source addr
+	TAX
+	LDA RCC		;; dest addr
+	TAY
+	LDA [RIV]	;; count
+	PHB
+	MVN $01,$00
+	PLB
+
+
+LAUNCH:
+	+const $1000
+	+ipush		;; args on stack
+	+const $0001	;; method RCC[1]
 	JMP BC_SEND
 
-.BOOTROM
-	+const $0000	;; KNIL (method at BOOTMETHOD)
-	JMP BC_SEND
-
-.OLIT			;; first literals
-	!word $0002
-	!word $C00A
-	!word BOOTMETHOD
-	!word $1000
-
-!zone bootsector {
-BOOTMETHOD:
-	!word $0007
-	!word $C00D
-	!word .BOOT	;; method name
-	!word .BCODE	;; byteCodes
-	!word .LITERALS
-	!word $0010	;; stackSize
-	!word $0010	;; temporarySize
-	!word $0000	;; class of method (nil)
-	!word .BOOT	;; 'text' of method
-.BOOT:
-	!word $8004	;; size
-	!word $C010	;; String
-	!raw "boot"
-.BCODE:
-	!word $0006
-	!word $C00B		;; ByteArray
-	!hex 50			;; dest bank 0
-	!hex 4052D207		;; new array
-	!hex F470		;; save in t0
-	!hex 5141		;; dbank, src, sbank
-	!hex D431		;; objclone (src bank dest bank)
-	;; set up for the blit
-	!hex 3052D218		;; i(count)
-	!hex 50	42		;; i(dest dbank count)
-	!hex 51 3051D218	;; i(src sbank dest dbank count)
-	!hex D530		;; blit nvram to $001000
-	!hex 4392		;; boot copied code
-	!byte $50, $D1, $40	;; idle
-	!byte $F6, $00, $00	;; repeat
-.LITERALS:
-	!word $0003
-	!word $C00A
-	!word $C00A
-	!word $0080
-	!word $1000
-	!word .ARGS
-.ARGS:
-	!word $0003
-	!word $C00A	;; Array
-	!word $EFF0
-	!word $0001
-	!word $0002
-}
