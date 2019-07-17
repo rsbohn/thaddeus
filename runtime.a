@@ -33,7 +33,8 @@ rtBoot:
 .code
 	!word $8020
 	!word $C00B		;; BinaryArray
-	!hex 4190F5		;; Identify
+	!hex 4291F5		;; Identify
+	!hex 408193		;; call stars (should not return)
 	!hex 50			;; put 0 on stack
 	!hex 51D20A		;; increment on stack
 	!hex F4F5
@@ -42,10 +43,10 @@ rtBoot:
 .literals
 	!word $0004
 	!word $C00A		;; Array
+	!word Runtime
 	!word putString
 	!word .psargs
-	!word $0000
-	!word $0000
+	!word stars		;; Method: stars
 .psargs
 	!word $0003
 	!word $C00A
@@ -123,5 +124,55 @@ rtStrings:
 	!word $C00A
 	!word Nil
 	!word Nil
+
+!zone stars {
+stars:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010	;stackSize
+	!word $0000	;tempSize
+	!word Runtime
+	!word Nil	;no text
+.name
+	!word $0005
+	!word $C010
+	!raw "stars"
+.literals
+	!word $0004
+	!word $C00A
+	!word Runtime
+	!word putString
+	!word .psa
+	!word .psb
+.code
+	!word $0007
+	!word $C00D
+	!hex 42914391	;; putString(.psa); putString(.psb);
+	!hex F60000	;; loop forever
+	!align 1,0
+.psa
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word .A
+	!word $0050*2
+.psb
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word .B
+	!word $0050*2
+.A
+	!word $0008
+	!word $C010
+	!raw "=*=*=*=*"
+.B
+	!word $0008
+	!word $C010
+	!raw "*-*-*-*-"
+}
 
 FIN:	!word $FFFF
