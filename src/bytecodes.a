@@ -88,14 +88,13 @@ BCDO:			;; take next bytecode
 ;	+const $0100
 ;	BIT RPS
 ;	BEQ +		;; disabled
-	+const $4701	;; right-ish
+	+const $4601	;; right-ish
 	STA RV+2
 	LDA RW
 	JSR DBHEX
 	+long
 	LDA (RW)
 	JSR DBHEX
-	JSR DBNL
 	+long
 ;;;;;;;;;;;;;;;;;;;;;
 +	+incr RW	;; advance instruction pointer
