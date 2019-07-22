@@ -34,6 +34,7 @@ rtBoot:
 	!word $8020
 	!word $C00B		;; BinaryArray
 	!hex 4291F5		;; Identify
+	!hex 4046458394		;; test #fill:with:
 	!hex 408193		;; call stars (should not return)
 	!hex 50			;; put 0 on stack
 	!hex 51D20A		;; increment on stack
@@ -41,12 +42,15 @@ rtBoot:
 	!hex F1
 	!align 1,0
 .literals
-	!word $0004
+	!word $0007
 	!word $C00A		;; Array
 	!word Runtime
 	!word putString
 	!word .psargs
-	!word stars		;; Method: stars
+	!word stars		;; Method #stars
+	!word fill_with		;; Method #fill:with:
+	!word $002A		;; '*'
+	!word $0050*3		;; row 3
 .psargs
 	!word $0003
 	!word $C00A
@@ -70,11 +74,13 @@ Runtime:
 	!raw "Runtime"
 	!align 1,0
 .methods
-	!word $0003
+	!word $0005
 	!word $C00A
 	!word Runtime
 	!word rtBoot
 	!word putString
+	!word fill_with
+	!word stars
 .variables
 	!word $0003
 	!word $C00A
@@ -109,14 +115,14 @@ putString:			;; [runtime string offset] print string at screen[offset]
 	!hex 21D10451	;i(dbank count)
 	!hex 4022D20A	;add offset to screen base i(dest dbank count)
 	!hex 50		;i(sbank dest dbank count)
-	!hex 2153D20A	;string[data] i(src sbank dest dbank count)
+	!hex 2154D20A	;string[data] i(src sbank dest dbank count)
 	!hex D530	;blit i()
 	!hex F1		;return self
 	!align 1,0
 }
 
 pztag:
-	!word $0020
+	!word $0018
 	!word $C010
 	!raw "Pluton/0 65816 Computer  "
 rtStrings:
@@ -124,6 +130,58 @@ rtStrings:
 	!word $C00A
 	!word Nil
 	!word Nil
+
+!zone fill {
+fill_with: ;; [offset char]
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0002
+	!word Runtime
+	!word Nil
+.name
+	!word $000A
+	!word $C010
+	!raw "fill:with:"
+.literals
+	!word $0005
+	!word $C00A
+	!word Runtime
+	!word putString
+	!word $7000
+	!word $0050
+	!word .blankRow
+	!word $8000
+.code
+	!word $8000+.cfin-.code-4
+	!word $C00B
+	!hex 44			;; i(blankRow)
+	!hex 44D102		;; i(String blankRow)
+	!hex D217		;; <stringClone string class>
+	!hex 71			;; t1=new String
+	!hex 5170		;; t0=1
+.loop
+	!hex 223130D316F5	;; fill s[t0]
+	!hex 5130D20A70		;; t0+=1
+	!hex 4330D201		;; t0==lit[3]?
+	!hex F8
+	!word .loop-.code-4
+	!hex 223130D316F5	;; fill s[lit[3]] (final char)
+	!hex 31D10451		;; i(dbank count)
+	!hex 4521D20A		;; i(dest dbank count)
+	!hex 503154D20A		;; i(src sbank dest dbank count)
+	!hex D130	;; <blit count dbank dest sbank src>
+	!hex F1
+.cfin
+	!align 1,0
+.blankRow
+	!word $8050
+	!word $C010
+	!fill $50,$20
+}
 
 !zone stars {
 stars:
