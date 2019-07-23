@@ -105,8 +105,23 @@ P_OSIZE:
 +	+ipush
 	JMP PRIMDONE
 
-P_NEWOBJ:
+P_ATPUT:
 	+next P_OSIZE
+	+primitive $05 ;; 10r05 Array at:put: i(point addr value -- addr)
+	+ipop
+	INC
+	ASL
+	TAY
+	+ipop
+	STA RA
+	+ipop
+	STA (RA),Y
+	LDA RA
+	+ipush
+	JMP PRIMDONE
+
+P_NEWOBJ:
+	+next P_ATPUT
 	+primitive $07 ;; 10r07 new object allocation i(size class -- object)
 	JSR GCALLOC	;; (size -- object)
 	JSR SETCLASS	;; (object class -- object)
@@ -159,7 +174,7 @@ P_STRAT:
 
 P_STRATPUT:
 	+next P_STRAT
-	+primitive $16 ;; string at:put: (point addr value -- addr)
+	+primitive $16 ;; String at:put: (point addr value -- addr)
 	+ipop
 	DEC ; see previous
 	INC ; skip 4 byte header
