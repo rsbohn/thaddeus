@@ -35,6 +35,8 @@ rtBoot:
 	!word $C00B		;; BinaryArray
 	!hex 4291F5		;; Identify
 	!hex 4046458394		;; test #fill:with:
+	!hex 50488270
+	!hex 3097F5
 	!hex 408193		;; call stars (should not return)
 	!hex 50			;; put 0 on stack
 	!hex 51D20A		;; increment on stack
@@ -42,7 +44,7 @@ rtBoot:
 	!hex F1
 	!align 1,0
 .literals
-	!word $0007
+	!word $0008
 	!word $C00A		;; Array
 	!word Runtime
 	!word putString
@@ -51,6 +53,8 @@ rtBoot:
 	!word fill_with		;; Method #fill:with:
 	!word $002D		;; '-'
 	!word $0050		;; row 1
+	!word lcd_at		;; Method lcd:at:
+	!word messages
 .psargs
 	!word $0003
 	!word $C00A
@@ -216,13 +220,13 @@ stars:
 	!word $C00A
 	!word Runtime
 	!word .A
-	!word $0050*2
+	!word $0024
 .psb
 	!word $0003
 	!word $C00A
 	!word Runtime
 	!word .B
-	!word $0050*2
+	!word $0024
 .A
 	!word $0008
 	!word $C010
@@ -232,5 +236,75 @@ stars:
 	!word $C010
 	!raw "*-*-*-*-"
 }
+!zone mktg {
+lcd_at: 		;; [source dest] lcd: str at: offset
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Runtime
+	!word Nil
+.name:
+	!word $0006
+	!word $C010
+	!raw "lcd_out"
+	!align 1,0
+.literals
+	!word $0008
+	!word $C00A
+	!word Runtime
+	!word $0020
+	!word $8000+$0050*3+$0010
+	!word $0000
+	!word $0000
+	!word $0000
+	!word $0050
+.code
+	!word $0020
+	!word $C00B
+			;; line 0
+	!hex 415142	;; i(dest dbank count)
+	!hex 5021	;; i(src sbank dest dbank count)
+	!hex D530	;; <blit ...>
+
+	!hex 41514246	;; line 1
+	!hex D20A
+	!hex 502141
+	!hex D20A
+	!hex D530
+
+	!hex 415142	;; line 2
+	!hex 46D20A
+	!hex 46D20A
+	!hex 5021
+	!hex 41D20A
+	!hex 41D20A
+	!hex D530
+
+	!hex 415142	;; line 3
+	!hex 46D20A
+	!hex 46D20A
+	!hex 46D20A
+	!hex 5021
+	!hex 41D20A
+	!hex 41D20A
+	!hex 41D20A
+	!hex D530
+	!hex F1
+}
+
+	* = $1400
+messages:
+	!raw "................................"
+	!raw "65816 Processor 4MHz ..........."
+	!raw "2048 KB RAM ...................."
+	!raw "4K ROM Monitor/Smalltalk ......."
+	!raw "6845 Screen 80x24 Monochrome ..."
+	!raw "2x Serial Ports 6551 ..........."
+	!raw "1x VIA6522 ....................."
+	!raw "1x AY3-8910 Audio .............."
 
 FIN:	!word $FFFF

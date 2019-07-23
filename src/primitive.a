@@ -265,6 +265,8 @@ P_BLIT:
 	STA RW+2
 	+ipop
 	TAY
+	DEY
+	DEY
 -	LDA [RA],Y
 	STA [RW],Y
 	DEY
