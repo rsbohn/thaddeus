@@ -262,8 +262,28 @@ P_ARAT:
 	+ipush
 	JMP PRIMDONE
 
-P_BLIT:
+P_BITOR:
 	+next P_ARAT
+	+primitive $24 ;; 10r36 Bit or: $D2 $24 i(a b -- a | b)
+	+ipop
+	STA RA
+	+ipop
+	ORA RA
+	+ipush
+	JMP PRIMDONE
+
+P_BITAND:
+	+next P_BITOR
+	+primitive $25 ;; 10r37 Bit or: $D2 $25 i(a b -- a & b)
+	+ipop
+	STA RA
+	+ipop
+	AND RA
+	+ipush
+	JMP PRIMDONE
+
+P_BLIT:
+	+next P_BITAND
 	+primitive $30 ;; 10r48 blit $D5 $30 i(src sbank dest dbank count --)
 	+long
 	+ipop
