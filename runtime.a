@@ -34,8 +34,8 @@ rtBoot:
 	!word $8020
 	!word $C00B		;; BinaryArray
 	!hex 4291F5		;; Identify
-	!hex 4046458394		;; test #fill:with:
-	!hex 50488270
+	!hex 4046458394		;; header line
+	!hex 42488270
 	!hex 3097F5		;; update 'lcd'
 	!hex 4B9AF5
 
@@ -43,6 +43,7 @@ rtBoot:
 	!hex 49D20A		;; add $20
 	!hex 3052D205		;; update arg[1]
 	!hex 3097F5		;; update 'lcd'
+	!hex 50D140
 	!hex 4B9AF5
 
 	!hex 3052D21849D20A
@@ -58,7 +59,8 @@ rtBoot:
 	!hex 4B9AF5
 
 	!hex 483052D205		;; back to start
-	!hex F60C00
+	!hex 50D140		;; halt
+	!hex F60C00		;; loop
 
 	!hex 50D140		;; halt
 	!hex F1
@@ -68,20 +70,20 @@ rtBoot:
 	!word $C00A		;; Array
 	!word Runtime
 	!word putString
-	!word .psargs
+	!word .olcd		;; 42
 	!word stars		;; Method #stars
 	!word fill_with		;; Method #fill:with:
 	!word $002D		;; '-'
 	!word $0050		;; row 1
-	!word lcd_at		;; Method lcd:at:
+	!word refresh		;; 97 Method lcd:at:
 	!word messages		;; 48
 	!word $0020
 	!word ticker		;; 4A
 	!word .targs		;; 4B
-.psargs
+.olcd
 	!word $0003
 	!word $C00A
-	!word Runtime
+	!word $0000		;; 10 current message
 	!word pztag
 	!word $0000
 .targs
@@ -119,6 +121,40 @@ Runtime:
 	!word rtStrings
 	!word Nil
 	!word Nil
+}
+
+!zone refresh {
+refresh:	;; [n addr] lcd: n from: addr
+		;; 'lcd' show n lines from addr
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Runtime
+	!word Nil
+.literals
+	!word $0004
+	!word $C00A
+	!word Runtime
+	!word messages
+	!word $0020	;; 42 message size
+	!word $0004	;; 43 lcd rows
+.code
+	!word $0020
+	!word $C00B
+	!hex 50
+	!hex 51D20A
+	!hex F421D201	;; compare TOS with arg[1] lcd size
+	!hex F80100	;; if stack value != lcd size: loop
+	!hex F5F1	;; else return
+.name
+	!word $8009
+	!word $C010
+	!raw "lcd:from:"
+	!align 1,0
 }
 
 !zone putString {
@@ -284,42 +320,38 @@ lcd_at: 		;; [source dest] lcd: str at: offset
 	!word $0008
 	!word $C00A
 	!word Runtime
-	!word $0020
+	!word $0020	;; 41 lcd row size
 	!word $8000+$0050*3+$0010
 	!word $0000
 	!word $0000
-	!word $0000
-	!word $0050
+	!word $00E0	;; 45 bitmask
+	!word $0050	;; 46 video row size
 .code
 	!word $0020
 	!word $C00B
-			;; line 0
+	!hex 2160	;; line 0
 	!hex 415142	;; i(dest dbank count)
-	!hex 5021	;; i(src sbank dest dbank count)
+	!hex 5010	;; i(src sbank dest dbank count)
 	!hex D530	;; <blit ...>
 
-	!hex 41514246	;; line 1
-	!hex D20A
-	!hex 502141
-	!hex D20A
+	!hex 415142	;; line 1
+	!hex 46D20A
+	!hex 50
+	!hex 1041D20A
+	!hex 45D225
 	!hex D530
 
 	!hex 415142	;; line 2
 	!hex 46D20A
 	!hex 46D20A
-	!hex 5021
-	!hex 41D20A
-	!hex 41D20A
+	!hex 501041D20A45D225
 	!hex D530
 
 	!hex 415142	;; line 3
 	!hex 46D20A
 	!hex 46D20A
 	!hex 46D20A
-	!hex 5021
-	!hex 41D20A
-	!hex 41D20A
-	!hex 41D20A
+	!hex 501041D20A45D225
 	!hex D530
 	!hex F1
 }
