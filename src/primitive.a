@@ -148,8 +148,19 @@ P_PLUS:
 	+ipush
 	JMP PRIMDONE
 
-P_BYTESALLOT:
+P_MINUS:
 	+next P_PLUS
+	+primitive $10 ;; 10r16 small integer subtraction (a b -- b - a)
+	+ipop
+	STA RA
+	+ipop
+	SEC
+	SBC RA
+	+ipush
+	JMP PRIMDONE
+
+P_BYTESALLOT:
+	+next P_MINUS
 	+primitive $14 ;; 10r20 byteArray alloc i(size class -- addr)
 	JSR GCIALLOC
 	JSR SETCLASS
