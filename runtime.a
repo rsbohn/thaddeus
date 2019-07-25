@@ -1,131 +1,81 @@
 ;; Thaddeus Runtime
 ;; A Little Smalltalk system
 ;; Copyright (c) Randall Bohn 2019
-;; 2019 0713
-;; MIT License: see LICENCE for terms 
-
-	!to "runtime.bin", plain
+;; 2019 0724
+;; MIT License: see LICENSE file
 ;; $ acme runtime.a
+	!to "runtime.bin", plain
 
 	* = $1000
-	Nil = $EFF0
 
-bootArray:
-	!word FIN-$1000		;; size
-	!word $C00A		;; Array
+boot:	!word FIN-$1000
+	!word $C00A
 	!word Runtime
-	!word rtBoot
-!zone rtboot {
-rtBoot:
-	!word $0007		;; size
-	!word $C00D		;; Method
+	!word starter
+
+	Nil = $EFF0
+;; This is the new Application.
+!zone starter {
+starter:
+	!word $0007
+	!word $C00D
 	!word .name
 	!word .code
 	!word .literals
-	!word $0010		;; stack size
-	!word $0008		;; 8 temps
-	!word Runtime		;; class
-	!word Nil		;; text
+	!word $0010
+	!word $0010	;; tempSize
+	!word Runtime
+	!word Nil
 .name
-	!word $8006
-	!word $C010		;; String
-	!raw "rtboot"
-.code
-	!word $8020
-	!word $C00B		;; BinaryArray
-	!hex 4291F5		;; Identify
-	!hex 4046458394		;; header line
-	!hex 42488270
-	!hex 3097F5		;; update 'lcd'
-	!hex 4B9AF5
-
-	!hex 3052D218		;; get msg offset
-	!hex 49D20A		;; add $20
-	!hex 3052D205		;; update arg[1]
-	!hex 3097F5		;; update 'lcd'
-	!hex 50D140
-	!hex 4B9AF5
-
-	!hex 3052D21849D20A
-	!hex 3052D2053097F5
-	!hex 4B9AF5
-
-	!hex 3052D21849D20A
-	!hex 3052D2053097F5
-	!hex 4B9AF5
-
-	!hex 3052D21849D20A
-	!hex 3052D2053097F5
-	!hex 4B9AF5
-
-	!hex 483052D205		;; back to start
-	!hex 50D140		;; halt
-	!hex F60C00		;; loop
-
-	!hex 50D140		;; halt
-	!hex F1
+	!word $8007
+	!word $C010
+	!raw "starter"
 	!align 1,0
 .literals
 	!word $0008
-	!word $C00A		;; Array
-	!word Runtime
-	!word putString
-	!word .olcd		;; 42
-	!word stars		;; Method #stars
-	!word fill_with		;; Method #fill:with:
-	!word $002D		;; '-'
-	!word $0050		;; row 1
-	!word refresh		;; 97 Method lcd:at:
-	!word messages		;; 48
-	!word $0020
-	!word ticker		;; 4A
-	!word .targs		;; 4B
-.olcd
-	!word $0003
 	!word $C00A
-	!word $0000		;; 10 current message
-	!word pztag
+	!word setup
+	!word loop
+	!word .sargs
+	!word .largs
 	!word $0000
-.targs
-	!word $0002
+	!word $0000
+	!word $0000
+	!word $0000
+.code
+	!word $8000
+	!word $C00B
+	!hex 4290F5
+	!hex 4391F5
+	!hex F60300
+	!align 1,0
+.sargs
+	!word $0001
 	!word $C00A
-	!word Runtime
-	!word $0200
+	!word $8000	;; starter temps array is the receiver
+	!word $0400	;; count for ticker
+.largs
+	!word $0001
+	!word $C00A
+	!word $8000	;; starter temps array is the receiver
 }
 
 !zone runtime {
 Runtime:
-	!word $0005
-	!word $C000		;; Class
-	!word .name
-	!word Runtime		;; parent is Runtime
-	!word .methods
-	!word $0010		;; size
-	!word .variables
-.name
-	!word $8009
-	!word $C010
-	!raw "Runtime"
-	!align 1,0
-.methods
-	!word $0005
-	!word $C00A
-	!word Runtime
-	!word rtBoot
-	!word putString
-	!word fill_with
-	!word stars
-.variables
-	!word $0003
-	!word $C00A
-	!word rtStrings
-	!word Nil
-	!word Nil
+	!word $0008
+	!word $C00A	;; Runtime is just an array
+	!word $8080
+	!word $8090
+	!word $0000
+	!word $0000
+	!word $0000
+	!word $0000
+	!word $0000
+	!word $0000
 }
 
-!zone refresh {
-refresh:	;; [n addr] lcd: n from: addr
-		;; 'lcd' show n lines from addr
+!zone setup {
+setup:
 	!word $0007
 	!word $C00D
 	!word .name
@@ -135,30 +85,111 @@ refresh:	;; [n addr] lcd: n from: addr
 	!word $0000
 	!word Runtime
 	!word Nil
+.name
+	!word $8005
+	!word $C010
+	!raw "setup"
+	!align 1,0
 .literals
 	!word $0004
 	!word $C00A
 	!word Runtime
-	!word messages
-	!word $0020	;; 42 message size
-	!word $0004	;; 43 lcd rows
+	!word .args
+	!word $0003
+	!word putString
 .code
-	!word $0020
+	!word $0008
 	!word $C00B
-	!hex 50
-	!hex 51D20A
-	!hex F421D201	;; compare TOS with arg[1] lcd size
-	!hex F80100	;; if stack value != lcd size: loop
-	!hex F5F1	;; else return
-.name
-	!word $8009
-	!word $C010
-	!raw "lcd:from:"
+	!hex 4193F5	;; putString pztag
+	!hex 40218260	;; args for ticker
+	!hex F1
 	!align 1,0
+.args
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word pztag
+	!word $0000
+}
+
+!zone loop {
+loop:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Runtime
+	!word Nil
+.name
+	!word $0004
+	!word $C010
+	!raw "loop"
+.literals
+	!word $0004
+	!word $C00A
+	!word .psargs
+	!word $001F
+	!word putString
+	!word $00F8	;; line 3 col 8
+	!word pztag	;; 44
+	!word blanks
+	!word ticker
+	!word messages
+	!word $0020	;; 48 lcd width
+	!word $0050	;; screen width
+	!word $00E0	;; 4A message mask
+.code
+	!word $0024
+	!word $C00B
+	;; first calculate the destination
+	!hex 2043D20A63	;; store $8000 in RIV[3]
+	;; <blit _src_ sbank dest dbank count>
+	!hex 485113501447D20AD530
+
+	!hex 1349D20A63	;; next row
+	!hex 1448D20A4AD22564	;; next message
+	!hex 485113501447D20AD530
+
+	!hex 1349D20A63	;; next row
+	!hex 1448D20A4AD22564	;; next message
+	!hex 485113501447D20AD530
+
+	!hex 1349D20A63	;; next row
+	!hex 1448D20A4AD22564	;; next message
+	!hex 485113501447D20AD530
+
+	;; now back up 2 messages for the next iteration
+	;; @B W W + - M & !
+	!hex 144848D20AD2104AD22564
+	!hex 1096F5	;; sleep a bit
+	!hex F1
+	!align 1,0
+.alternate
+	!word $0024
+	!word $C00B
+	!hex 454052D305	;; putString blanks
+	!hex 4092F5
+	!hex 5A11D20A	;; XB--
+	!hex 41D22561	;; XB &= 0x1F
+	!hex 4311D20A	;; XB + $50 * 3
+	!hex 4053D305	;; <05 __ .psargs 03>
+	!hex 444052D305	;; putString pztag
+	!hex 4092F5	;; putString
+	!hex 1096F5F1
+	!align 1,0
+.psargs
+	!word $0003
+	!word $C00A
+	!word Runtime
+	!word pztag
+	!word $0050*3+8
 }
 
 !zone putString {
-putString:			;; [runtime string offset] print string at screen[offset]
+putString:	;; [runtime string offset] print string at screen[offset]
 	!word $0007
 	!word $C00D
 	!word .name
@@ -189,203 +220,43 @@ putString:			;; [runtime string offset] print string at screen[offset]
 	!align 1,0
 }
 
-pztag:
-	!word $0018
-	!word $C010
-	!raw "Pluton/0 65816 Computer  "
-rtStrings:
-	!word $0002
-	!word $C00A
-	!word Nil
-	!word Nil
-
-!zone fill {
-fill_with: ;; [offset char]
-	!word $0007
-	!word $C00D
-	!word .name
-	!word .code
-	!word .literals
-	!word $0010
-	!word $0002
-	!word Runtime
-	!word Nil
-.name
-	!word $000A
-	!word $C010
-	!raw "fill:with:"
-.literals
-	!word $0005
-	!word $C00A
-	!word Runtime
-	!word putString
-	!word $7000
-	!word $0050
-	!word .blankRow
-	!word $8000
-.code
-	!word $8000+.cfin-.code-4
-	!word $C00B
-	!hex 44			;; i(blankRow)
-	!hex 44D102		;; i(String blankRow)
-	!hex D217		;; <stringClone string class>
-	!hex 71			;; t1=new String
-	!hex 5170		;; t0=1
-.loop
-	!hex 223130D316F5	;; fill s[t0]
-	!hex 5130D20A70		;; t0+=1
-	!hex 4330D201		;; t0==lit[3]?
-	!hex F8
-	!word .loop-.code-4
-	!hex 223130D316F5	;; fill s[lit[3]] (final char)
-	!hex 31D10451		;; i(dbank count)
-	!hex 4521D20A		;; i(dest dbank count)
-	!hex 503154D20A		;; i(src sbank dest dbank count)
-	!hex D130	;; <blit count dbank dest sbank src>
-	!hex F1
-.cfin
-	!align 1,0
-.blankRow
-	!word $8050
-	!word $C010
-	!fill $50,$20
-}
-
-!zone stars {
-stars:
-	!word $0007
-	!word $C00D
-	!word .name
-	!word .code
-	!word .literals
-	!word $0010	;stackSize
-	!word $0000	;tempSize
-	!word Runtime
-	!word Nil	;no text
-.name
-	!word $0005
-	!word $C010
-	!raw "stars"
-.literals
-	!word $0004
-	!word $C00A
-	!word Runtime
-	!word putString
-	!word .psa
-	!word .psb
-.code
-	!word $0007
-	!word $C00D
-	!hex 42914391	;; putString(.psa); putString(.psb);
-	!hex F60000	;; loop forever
-	!align 1,0
-.psa
-	!word $0003
-	!word $C00A
-	!word Runtime
-	!word .A
-	!word $0024
-.psb
-	!word $0003
-	!word $C00A
-	!word Runtime
-	!word .B
-	!word $0024
-.A
-	!word $0008
-	!word $C010
-	!raw "=*=*=*=*"
-.B
-	!word $0008
-	!word $C010
-	!raw "*-*-*-*-"
-}
-!zone mktg {
-lcd_at: 		;; [source dest] lcd: str at: offset
-	!word $0007
-	!word $C00D
-	!word .name
-	!word .code
-	!word .literals
-	!word $0010
-	!word $0000
-	!word Runtime
-	!word Nil
-.name:
-	!word $0006
-	!word $C010
-	!raw "lcd_out"
-	!align 1,0
-.literals
-	!word $0008
-	!word $C00A
-	!word Runtime
-	!word $0020	;; 41 lcd row size
-	!word $8000+$0050*3+$0010
-	!word $0000
-	!word $0000
-	!word $00E0	;; 45 bitmask
-	!word $0050	;; 46 video row size
-.code
-	!word $0020
-	!word $C00B
-	!hex 2160	;; line 0
-	!hex 415142	;; i(dest dbank count)
-	!hex 5010	;; i(src sbank dest dbank count)
-	!hex D530	;; <blit ...>
-
-	!hex 415142	;; line 1
-	!hex 46D20A
-	!hex 50
-	!hex 1041D20A
-	!hex 45D225
-	!hex D530
-
-	!hex 415142	;; line 2
-	!hex 46D20A
-	!hex 46D20A
-	!hex 501041D20A45D225
-	!hex D530
-
-	!hex 415142	;; line 3
-	!hex 46D20A
-	!hex 46D20A
-	!hex 46D20A
-	!hex 501041D20A45D225
-	!hex D530
-	!hex F1
-}
-
 !zone ticker {
+
 ticker:
-	!word $0007
-	!word $C00D
-	!word .name
-	!word .code
-	!word .literals
-	!word $0010
-	!word $0000
-	!word Runtime
-	!word Nil
+        !word $0007
+        !word $C00D
+        !word .name
+        !word .code
+        !word .literals
+        !word $0010
+        !word $0000
+        !word Runtime
+        !word Nil
 .name
-	!word $8007
-	!word $C010
-	!raw "ticker:"
-	!align 1,0
+        !word $8007
+        !word $C010
+        !raw "ticker:"
+        !align 1,0
 .literals
-	!word $0001
-	!word $C00A
-	!word $FFFF
+        !word $0001
+        !word $C00A
+        !word $FFFF
 .code
-	!word $800C
-	!word $C00B
-	!hex 2140D20A
-	!hex F450D201
-	!hex F80100
-	!hex F1
+        !word $800C
+        !word $C00B
+        !hex 2140D20A
+        !hex F450D201
+        !hex F80100
+        !hex F1
 }
 
-	* = $1400
+pztag:	!word $0018
+	!word $C010
+	!raw "Pluton/0 65816 Computer "
+blanks:	!word $0050
+	!word $C010
+	!fill $20, $20
+
 messages:
 	!raw "................................"
 	!raw "65816 Processor 4MHz ..........."
@@ -396,4 +267,4 @@ messages:
 	!raw "1x VIA6522 ....................."
 	!raw "1x AY3-8910 Audio .............."
 
-FIN:	!word $FFFF
+FIN:
