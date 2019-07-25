@@ -552,6 +552,11 @@ S01:
 	TAY
 	LDA (RCX), Y
 	STA RCA
+	;; restore the receiver
+	+const $0000+4	;; args[receiver]
+	TAY
+	LDA (RCA),Y
+	STA RIV
 
 	+const $0004+4	;; context[temps]
 	TAY
@@ -725,6 +730,7 @@ BCBOOT:	;; set up the VM, run user code or BOOTSECTOR
 	PHB
 	MVN $01,$00
 	PLB
+	STZ RIV+2
 
 
 LAUNCH:
