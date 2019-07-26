@@ -260,10 +260,10 @@ blanks:	!word $0050
 messages:
 	!raw "       <<Pluton/Zero>>          "
 	!raw ".... 65816 Processor 4MHz ......"
-	!raw "........ 2048 KB RAM ..........."
+	!raw "......... 216K RAM ............."
 	!raw "... 4K Little Smalltalk ROM ...."
 	!raw ". 6845 Video 80x24 Monochrome .."
-	!raw ".... 2x Serial Ports 6551 ......"
+	!raw ".... 2x 6551 Serial Ports ......"
 	!raw "........ 1x VIA6522 ............"
 	!raw "...... 1x AY3-8910 Audio ......."
 
