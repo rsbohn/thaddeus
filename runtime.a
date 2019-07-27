@@ -43,7 +43,7 @@ starter:
 	!word $0000
 	!word $0000
 .code
-	!word $8000
+	!word $8009
 	!word $C00B
 	!hex 4290F5
 	!hex 4391F5
@@ -53,7 +53,7 @@ starter:
 	!word $0001
 	!word $C00A
 	!word $8000	;; starter temps array is the receiver
-	!word $0400	;; count for ticker
+	!word $0180	;; count for ticker
 .largs
 	!word $0001
 	!word $C00A
@@ -72,6 +72,60 @@ Runtime:
 	!word $0000
 	!word $0000
 	!word $0000
+}
+
+!zone fork {
+fork:	;; fork: method with: args in: directPage
+	;; allocates context on heap
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0001
+	!word Runtime
+	!word Nil
+.name
+	!word $800B
+	!word $C010
+	!raw "fork:with:in:"
+	!align 1,0
+.literals
+	!word $0004
+	!word $C00A
+	!word $C00C
+	!word $0090
+	!word $000F
+	!word $0000
+.code
+	!word $8024
+	!word $C00B
+	;; t0 := Context new
+	!hex 4057D20770
+	;; set method
+	!hex 213051D305F5
+	;; set args
+	!hex 223052D305F5
+	;; set temporaries? YAGNI
+	!hex 5D3053D305F5
+	;; set stack
+	!hex 2341D20A3054D305F5
+	;; set bytePointer
+	!hex 503055D305F5
+	;; set stack top
+	!hex 503056D305F5
+	;; set previousContext to Nil
+	!hex 5D3057D305
+	;; prepare process page
+	;; set context
+	!hex 2342D305F5
+	;; set process flags
+	!hex 522355D305F5
+	;; add new process to list of processes
+	!hex 235056D305F5
+	!hex F1
+	!align 1,0
 }
 
 !zone setup {
@@ -93,15 +147,18 @@ setup:
 .literals
 	!word $0004
 	!word $C00A
-	!word Runtime
+	!word Runtime	;; 40
 	!word .args
 	!word $0003
 	!word putString
+	!word fork	;; 94
+	!word .a1
 .code
-	!word $0008
+	!word $8008
 	!word $C00B
 	!hex 4193F5	;; putString pztag
 	!hex 40218260	;; args for ticker
+	!hex 4594F5	;; fork second process
 	!hex F1
 	!align 1,0
 .args
@@ -110,6 +167,13 @@ setup:
 	!word Runtime
 	!word pztag
 	!word $0000
+.a1			;; fork: method with: args in: page
+	!word $0004
+	!word $C00A
+	!word Runtime	;; receiver
+	!word jingle	;; method
+	!word .a1	;; args
+	!word $0100	;; page
 }
 
 !zone loop {
@@ -124,7 +188,7 @@ loop:
 	!word Runtime
 	!word Nil
 .name
-	!word $0004
+	!word $8004
 	!word $C010
 	!raw "loop"
 .literals
@@ -142,7 +206,7 @@ loop:
 	!word $0050	;; screen width
 	!word $00E0	;; 4A message mask
 .code
-	!word $0024
+	!word $8024
 	!word $C00B
 	;; first calculate the destination
 	!hex 2043D20A63	;; store $8000 in RIV[3]
@@ -188,6 +252,53 @@ loop:
 	!word $0050*3+8
 }
 
+	AUDIO = $0850
+!zone jingle {
+jingle:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Runtime
+	!word Nil
+.name
+	!word $8006
+	!word $C010
+	!raw "jingle"
+.literals
+	!word $0002
+	!word $C00A
+	!word AUDIO
+	!word .N0
+	!word ticker
+	!word .ta0
+.code
+	!word $800A
+	!word $C00B
+	!hex 4140D232	;; keystone
+	!hex 4392F5
+	!hex F60000
+	!align 1,0
+.N0
+	!word $8010
+	!word $C00B
+	!hex 00 0C 18 0C 00 06
+	!hex 00 38
+	!hex 13 13 13
+	!hex 00 13
+	!hex 01
+	!hex FF FF
+	!align 1,0
+.ta0
+	!word $0002
+	!word $C00A
+	!word Runtime
+	!word $0060
+}
+
 !zone putString {
 putString:	;; [runtime string offset] print string at screen[offset]
 	!word $0007
@@ -222,7 +333,7 @@ putString:	;; [runtime string offset] print string at screen[offset]
 
 !zone ticker {
 
-ticker:
+ticker:			;; (receiver) ticker: count
         !word $0007
         !word $C00D
         !word .name
