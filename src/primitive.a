@@ -364,11 +364,12 @@ P_KEYSTONE:
 	STA RA
 	LDA (RA)
 	BPL .nope	;; must by a byte array
+	+const $00FF
+	AND (RA)
 	INC RA		;; skip to the data
 	INC RA
 	INC RA
 	INC RA
-	AND $0FFF	;; $00FF
 	SEP #$20	;; short A
 	STA RIV+3	;; hold that
 	LDA #$00
