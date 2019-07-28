@@ -53,9 +53,9 @@ starter:
 	!word $0001
 	!word $C00A
 	!word $8000	;; starter temps array is the receiver
-	!word $0180	;; count for ticker
+	!word $0060
 .largs
-	!word $0001
+	!word $0002
 	!word $C00A
 	!word $8000	;; starter temps array is the receiver
 }
@@ -92,12 +92,13 @@ fork:	;; fork: method with: args in: directPage
 	!raw "fork:with:in:"
 	!align 1,0
 .literals
-	!word $0004
+	!word $0005
 	!word $C00A
 	!word $C00C
 	!word $0090
 	!word $000F
-	!word $0000
+	!word $8000
+	!word $0015
 .code
 	!word $8024
 	!word $C00B
@@ -120,6 +121,8 @@ fork:	;; fork: method with: args in: directPage
 	;; prepare process page
 	;; set context
 	!hex 2342D305F5
+	;; set debug output
+	!hex 432344 D305F5
 	;; set process flags
 	!hex 522355D305F5
 	;; add new process to list of processes
@@ -157,7 +160,6 @@ setup:
 	!word $8008
 	!word $C00B
 	!hex 4193F5	;; putString pztag
-	!hex 40218260	;; args for ticker
 	!hex 4594F5	;; fork second process
 	!hex F1
 	!align 1,0
@@ -171,9 +173,14 @@ setup:
 	!word $0004
 	!word $C00A
 	!word Runtime	;; receiver
-	!word jingle	;; method
-	!word .a1	;; args
+	!word ticker	;; method
+	!word .a2	;; ticker args
 	!word $0100	;; page
+.a2
+	!word $0004
+	!word $C00A
+	!word Runtime
+	!word $00C0	;; count for ticker
 }
 
 !zone loop {
@@ -191,6 +198,52 @@ loop:
 	!word $8004
 	!word $C010
 	!raw "loop"
+.literals
+	!word $0004
+	!word $C00A
+	!word .jk
+	!word jingle
+	!word .scargs
+	!word scroll
+.code
+	!word $8020
+	!word $C00B
+	!hex 4091F5	;; jingle
+	!hex 4293F5	;; scroll
+	!hex 54D140	;; suspend
+	!hex 4091F5	;; jingle
+	!hex 54D140	;; suspend
+	!hex 4091F5	;; jingle
+	!hex 54D140	;; suspend
+	!hex 4091F5	;; jingle
+	!hex 54D140	;; suspend
+	!hex F1
+	!align 1,0
+.jk
+	!word $0001
+	!word $C00A
+	!word Runtime
+.scargs
+	!word $0001
+	!word $C00A
+	!word $8000
+}
+
+!zone scroll {
+scroll:
+	!word $0007
+	!word $C00D
+	!word .name
+	!word .code
+	!word .literals
+	!word $0010
+	!word $0000
+	!word Runtime
+	!word Nil
+.name
+	!word $8006
+	!word $C010
+	!raw "scroll"
 .literals
 	!word $0004
 	!word $C00A
@@ -228,21 +281,7 @@ loop:
 	;; now back up 2 messages for the next iteration
 	;; @B W W + - M & !
 	!hex 144848D20AD2104AD22564
-	!hex 1096F5	;; sleep a bit
 	!hex F1
-	!align 1,0
-.alternate
-	!word $0024
-	!word $C00B
-	!hex 454052D305	;; putString blanks
-	!hex 4092F5
-	!hex 5A11D20A	;; XB--
-	!hex 41D22561	;; XB &= 0x1F
-	!hex 4311D20A	;; XB + $50 * 3
-	!hex 4053D305	;; <05 __ .psargs 03>
-	!hex 444052D305	;; putString pztag
-	!hex 4092F5	;; putString
-	!hex 1096F5F1
 	!align 1,0
 .psargs
 	!word $0003
@@ -273,30 +312,22 @@ jingle:
 	!word $C00A
 	!word AUDIO
 	!word .N0
-	!word ticker
-	!word .ta0
 .code
 	!word $800A
 	!word $C00B
 	!hex 4140D232	;; keystone
-	!hex 4392F5
-	!hex F60000
+	!hex F1
 	!align 1,0
 .N0
 	!word $8010
 	!word $C00B
-	!hex 00 0C 18 0C 00 06
+	!hex 00 07 05 07 00 0E
 	!hex 00 38
-	!hex 13 13 13
-	!hex 00 13
-	!hex 01
+	!hex 30 30 30
+	!hex 00 38
+	!hex 02
 	!hex FF FF
 	!align 1,0
-.ta0
-	!word $0002
-	!word $C00A
-	!word Runtime
-	!word $0060
 }
 
 !zone putString {
@@ -355,10 +386,14 @@ ticker:			;; (receiver) ticker: count
 .code
         !word $800C
         !word $C00B
-        !hex 2140D20A
-        !hex F450D201
-        !hex F80100
-        !hex F1
+        !hex 21		;; push counter
+	!hex 40D20A	;; decrement
+        !hex F450D201	;; == 0?
+        !hex F80100	;; if False: loop
+	!hex F5		;; drop counter
+	!hex 515055	;; resume process zero XXX
+	!hex D305F5
+        !hex F60000	;; forever
 }
 
 pztag:	!word $0018
@@ -372,7 +407,7 @@ messages:
 	!raw "       <<Pluton/Zero>>          "
 	!raw ".... 65816 Processor 4MHz ......"
 	!raw "......... 216K RAM ............."
-	!raw "... 4K Little Smalltalk ROM ...."
+	!raw "... Little Smalltalk 4K ROM ...."
 	!raw ". 6845 Video 80x24 Monochrome .."
 	!raw ".... 2x 6551 Serial Ports ......"
 	!raw "........ 1x VIA6522 ............"
