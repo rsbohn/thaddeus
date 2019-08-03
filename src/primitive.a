@@ -275,7 +275,7 @@ P_ARAT:
 
 P_BITOR:
 	+next P_ARAT
-	+primitive $24 ;; 10r36 Bit or: $D2 $24 i(a b -- a | b)
+	+primitive $24 ;; 10r36 bitOr or: $D2 $24 i(a b -- a | b)
 	+ipop
 	STA RA
 	+ipop
@@ -285,7 +285,7 @@ P_BITOR:
 
 P_BITAND:
 	+next P_BITOR
-	+primitive $25 ;; 10r37 Bit or: $D2 $25 i(a b -- a & b)
+	+primitive $25 ;; 10r37 bitAnd: $D2 $25 i(a b -- a & b)
 	+ipop
 	STA RA
 	+ipop
@@ -389,8 +389,27 @@ P_KEYSTONE:
 .nope:
 	JMP PRIMDONE
 
-P_PROCSET:
+P_RNEXT:
 	+next P_KEYSTONE
+	+primitive $33 ;; 10r51 RNEXT (X0 -- X1) D1 33 random next
+	;; linear feedback shift register 
+	;; X1 = X0 >> 1
+	;; if (!CC) X1 ^= MASK
+	!al		;; tried to avoid it
+	DEC RS
+	DEC RS
+	LDA (RS)
+	LSR
+	BCC +		;; skip invert if bit 0 was 0
+	EOR #$B400
++	STA (RS)
+	INC RS
+	INC RS
+	JMP PRIMDONE
+	!as
+
+P_PROCSET:
+	+next P_RNEXT
 	+primitive $40 ;; 10r64 PROCSET (status --) D1 40
 	+ipop
 	STA RPS

@@ -85,9 +85,9 @@ BCDO:			;; take next bytecode
 	PHA		;; push codeptr
 ;;;;;;;;;;;;;;;;;;;;;
 .DEBUG:
-;	+const $0100
-;	BIT RPS
-;	BEQ +		;; disabled
+	+const $0100
+	BIT RPS
+	BEQ +		;; disabled
 	+const $4601	;; right-ish
 	STA RV+2
 	LDA RW
